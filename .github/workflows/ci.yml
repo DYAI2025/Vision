@@ -102,6 +102,21 @@ jobs:
       - name: Run drift check
         run: bash scripts/check-env-drift.sh
 
+  caddyfile-validate:
+    name: Caddyfile syntax check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Caddyfile syntax
+        run: |
+          docker run --rm \
+            -v "$PWD/4-deploy/ingress/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine \
+            caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
   # Per-component lint / test jobs are added by per-component skeleton tasks
   # (TASK-whatsorga-skeleton, TASK-hermes-skeleton, etc.) once each component's
   # tech stack is chosen. Each component declares its CI in its own README per
