@@ -169,6 +169,9 @@ services:
       GBRAIN_BRIDGE_URL: http://gbrain-bridge:8000
       KANBAN_SYNC_URL: http://kanban-sync:8000
       OLLAMA_URL: http://ollama:11434
+      # Default Gemma-family model. Overridable per-deployment in .env.
+      # See 4-deploy/ollama/README.md for the model footprint table.
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
       # Outbound — hermes-runtime's identity for proposal-pipeline calls and reads
       # against backlog-core / gbrain-bridge / kanban-sync.
       HERMES_RUNTIME_TOKEN: ${HERMES_RUNTIME_TOKEN:?required}
