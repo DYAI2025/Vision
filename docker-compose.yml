@@ -98,12 +98,20 @@ services:
     container_name: project-agent-system-backlog-core
     restart: unless-stopped
     logging: *default-logging
-    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
-    # are scoped per service. Each service receives only the env vars
-    # listed below; auth tokens land here once TASK-env-example-bootstrap
-    # defines the per-service token inventory.
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets are
+    # scoped per service. backlog-core's accepted-tokens list contains every
+    # caller identity that may invoke its endpoints (per
+    # DEC-service-auth-bearer-tokens).
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-vision}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vision}
+      # Outbound — backlog-core's identity for cascade calls to gbrain-bridge / kanban-sync.
+      BACKLOG_CORE_TOKEN: ${BACKLOG_CORE_TOKEN:?required}
+      # Inbound — accepted from each caller per DEC-service-auth-bearer-tokens.
+      WHATSORGA_INGEST_TOKEN: ${WHATSORGA_INGEST_TOKEN:?required}
+      HERMES_RUNTIME_TOKEN: ${HERMES_RUNTIME_TOKEN:?required}
+      GBRAIN_BRIDGE_TOKEN: ${GBRAIN_BRIDGE_TOKEN:?required}
+      KANBAN_SYNC_TOKEN: ${KANBAN_SYNC_TOKEN:?required}
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:?required}
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,12 +132,13 @@ services:
     container_name: project-agent-system-whatsorga-ingest
     restart: unless-stopped
     logging: *default-logging
-    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
-    # are scoped per service. Each service receives only the env vars
-    # listed below; auth tokens land here once TASK-env-example-bootstrap
-    # defines the per-service token inventory.
+    # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
+      # Outbound — whatsorga-ingest's identity for POST /v1/inputs to backlog-core.
+      WHATSORGA_INGEST_TOKEN: ${WHATSORGA_INGEST_TOKEN:?required}
+      # Inbound — accepted from operator CLI for source-registration adapter wiring.
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:?required}
     depends_on:
       backlog-core:
         condition: service_healthy
@@ -150,15 +159,17 @@ services:
     container_name: project-agent-system-hermes-runtime
     restart: unless-stopped
     logging: *default-logging
-    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
-    # are scoped per service. Each service receives only the env vars
-    # listed below; auth tokens land here once TASK-env-example-bootstrap
-    # defines the per-service token inventory.
+    # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
       GBRAIN_BRIDGE_URL: http://gbrain-bridge:8000
       KANBAN_SYNC_URL: http://kanban-sync:8000
       OLLAMA_URL: http://ollama:11434
+      # Outbound — hermes-runtime's identity for proposal-pipeline calls and reads
+      # against backlog-core / gbrain-bridge / kanban-sync.
+      HERMES_RUNTIME_TOKEN: ${HERMES_RUNTIME_TOKEN:?required}
+      # Inbound — accepted from operator CLI for POST /v1/agent/process-now.
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:?required}
     depends_on:
       backlog-core:
         condition: service_healthy
@@ -182,13 +193,16 @@ services:
     container_name: project-agent-system-gbrain-bridge
     restart: unless-stopped
     logging: *default-logging
-    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
-    # are scoped per service. Each service receives only the env vars
-    # listed below; auth tokens land here once TASK-env-example-bootstrap
-    # defines the per-service token inventory.
+    # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
       VAULT_PATH: /vault
+      # Outbound — gbrain-bridge's identity for disposition POSTs from the
+      # Obsidian command-palette watch script (per DEC-obsidian-as-review-ui).
+      GBRAIN_BRIDGE_TOKEN: ${GBRAIN_BRIDGE_TOKEN:?required}
+      # Inbound — accepted from hermes-runtime (page CRUD), backlog-core (RTBF cascade).
+      HERMES_RUNTIME_TOKEN: ${HERMES_RUNTIME_TOKEN:?required}
+      BACKLOG_CORE_TOKEN: ${BACKLOG_CORE_TOKEN:?required}
     volumes:
       - vault:/vault
     depends_on:
@@ -211,14 +225,18 @@ services:
     container_name: project-agent-system-kanban-sync
     restart: unless-stopped
     logging: *default-logging
-    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
-    # are scoped per service. Each service receives only the env vars
-    # listed below; auth tokens land here once TASK-env-example-bootstrap
-    # defines the per-service token inventory.
+    # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
       VAULT_PATH: /vault
       KANBAN_SUBTREE: /vault/Kanban
+      # Outbound — kanban-sync's identity for kanban.user_edit / unattributed_edit
+      # events to backlog-core.
+      KANBAN_SYNC_TOKEN: ${KANBAN_SYNC_TOKEN:?required}
+      # Inbound — accepted from hermes-runtime (card CRUD), backlog-core
+      # (RTBF cascade, scheduled sync trigger).
+      HERMES_RUNTIME_TOKEN: ${HERMES_RUNTIME_TOKEN:?required}
+      BACKLOG_CORE_TOKEN: ${BACKLOG_CORE_TOKEN:?required}
     volumes:
       - vault:/vault
     depends_on:

@@ -5,6 +5,12 @@ on:
   push:
     branches: [main]
 
+# Cancel in-flight runs on the same ref when a new push lands. Saves runner
+# minutes on rapid PR force-pushes and avoids stale-build comments on PRs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   structure-check:
     name: Repository structure check
@@ -62,9 +68,17 @@ jobs:
         run: |
           # Compose substitutes ${VAR:?...} keys at parse time even with --quiet.
           # These dummy values let `compose config` succeed without real secrets.
+          # Keep this list synchronized with the required keys in .env.example;
+          # `env-drift-check` job below catches drift between .env.example and compose.
           {
             echo "POSTGRES_PASSWORD=ci-validation-password"
             echo "TS_AUTHKEY=tskey-ci-validation"
+            echo "WHATSORGA_INGEST_TOKEN=ci-token"
+            echo "HERMES_RUNTIME_TOKEN=ci-token"
+            echo "BACKLOG_CORE_TOKEN=ci-token"
+            echo "GBRAIN_BRIDGE_TOKEN=ci-token"
+            echo "KANBAN_SYNC_TOKEN=ci-token"
+            echo "OPERATOR_TOKEN=ci-token"
           } > .env
 
       - name: Validate Compose configuration (caddy profile)
@@ -76,6 +90,17 @@ jobs:
       - name: Clean up CI .env
         if: always()
         run: rm -f .env
+
+  env-drift-check:
+    name: .env.example drift check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run drift check
+        run: bash scripts/check-env-drift.sh
 
   # Per-component lint / test jobs are added by per-component skeleton tasks
   # (TASK-whatsorga-skeleton, TASK-hermes-skeleton, etc.) once each component's
