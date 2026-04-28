@@ -108,6 +108,9 @@ services:
     # DEC-service-auth-bearer-tokens).
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-vision}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vision}
+      # Connection-pool sizing — overridable for production load tuning.
+      BACKLOG_CORE_DB_POOL_MIN: ${BACKLOG_CORE_DB_POOL_MIN:-1}
+      BACKLOG_CORE_DB_POOL_MAX: ${BACKLOG_CORE_DB_POOL_MAX:-10}
       # Outbound — backlog-core's identity for cascade calls to gbrain-bridge / kanban-sync.
       BACKLOG_CORE_TOKEN: ${BACKLOG_CORE_TOKEN:?required}
       # Inbound — accepted from each caller per DEC-service-auth-bearer-tokens.

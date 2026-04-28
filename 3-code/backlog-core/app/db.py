@@ -31,6 +31,10 @@ class _PoolLike(Protocol):
     async def close(self) -> None: ...
 
 
+DEFAULT_POOL_MIN = 1
+DEFAULT_POOL_MAX = 10
+
+
 def _database_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
@@ -40,10 +44,25 @@ def _database_url() -> str:
     return url
 
 
+def _pool_size() -> tuple[int, int]:
+    """Read pool sizing from env with safe defaults; validate min <= max."""
+    min_size = int(os.environ.get("BACKLOG_CORE_DB_POOL_MIN", DEFAULT_POOL_MIN))
+    max_size = int(os.environ.get("BACKLOG_CORE_DB_POOL_MAX", DEFAULT_POOL_MAX))
+    if min_size > max_size:
+        raise RuntimeError(
+            f"BACKLOG_CORE_DB_POOL_MIN ({min_size}) exceeds "
+            f"BACKLOG_CORE_DB_POOL_MAX ({max_size}) — refusing to start."
+        )
+    return min_size, max_size
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Create the connection pool on startup; close it on shutdown."""
-    pool = await asyncpg.create_pool(dsn=_database_url(), min_size=1, max_size=10)
+    min_size, max_size = _pool_size()
+    pool = await asyncpg.create_pool(
+        dsn=_database_url(), min_size=min_size, max_size=max_size
+    )
     app.state.pool = pool
     try:
         yield
