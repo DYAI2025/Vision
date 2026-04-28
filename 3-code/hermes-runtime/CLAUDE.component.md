@@ -2,7 +2,7 @@
 
 **Responsibility**: Hosts the agent (Ollama-backed Gemma-family model) and its skills (project routing, artifact extraction, **duplicate detection**, brain-first lookup, model routing), the **confidence-gate middleware**, and the **learning-loop** skill. Has read access to `backlog-core` and the GBrain vault but **no write credentials** for any system of record.
 
-**Technology**: TBD per Code-phase decision (Python likely — LLM ergonomics, agent libraries, prompt-templating tooling). Recorded as a per-component `DEC-*` when the first implementation task is picked up.
+**Technology**: Python 3.12 + FastAPI per [`DEC-backend-stack-python-fastapi`](../../decisions/DEC-backend-stack-python-fastapi.md). Uniform across all five backend components.
 
 ## Interfaces
 
@@ -34,6 +34,7 @@
 
 | File | Title | Trigger |
 |------|-------|---------|
+| [DEC-backend-stack-python-fastapi](../../decisions/DEC-backend-stack-python-fastapi.md) | Python 3.12 + FastAPI as the uniform backend stack | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
 | [DEC-confidence-gate-as-middleware](../../decisions/DEC-confidence-gate-as-middleware.md) | Gate middleware inside `hermes-runtime`, not a separate service | Any agent-action site implementation |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | Inter-service call patterns |
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Endpoint construction on every outbound call |

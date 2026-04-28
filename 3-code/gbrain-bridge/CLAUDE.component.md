@@ -2,7 +2,7 @@
 
 **Responsibility**: GBrain vault read/write with schema validation per `REQ-F-gbrain-schema`, bidirectional link integrity per `REQ-F-bidirectional-links`, redaction-precondition check per `REQ-SEC-redaction-precondition`, and the weekly vault audit sweep per `REQ-MNT-vault-audit-sweep`. Also hosts the **Obsidian command-palette watch script** that translates operator dispositions into HTTP calls to `backlog-core` per [`DEC-obsidian-as-review-ui`](../../decisions/DEC-obsidian-as-review-ui.md).
 
-**Technology**: TBD per Code-phase decision (Python likely — markdown + YAML frontmatter manipulation, file-system watching). Recorded as a per-component `DEC-*` when the first implementation task is picked up.
+**Technology**: Python 3.12 + FastAPI per [`DEC-backend-stack-python-fastapi`](../../decisions/DEC-backend-stack-python-fastapi.md). Uniform across all five backend components.
 
 ## Interfaces
 
@@ -37,6 +37,7 @@
 
 | File | Title | Trigger |
 |------|-------|---------|
+| [DEC-backend-stack-python-fastapi](../../decisions/DEC-backend-stack-python-fastapi.md) | Python 3.12 + FastAPI as the uniform backend stack | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
 | [DEC-obsidian-as-review-ui](../../decisions/DEC-obsidian-as-review-ui.md) | Review queue and proposal-detail views as GBrain pages disposed via Obsidian command palette | Watch-script implementation; `obsidian-bindings/` asset bundle |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | Inter-service call patterns |
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Every endpoint route |

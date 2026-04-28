@@ -2,7 +2,7 @@
 
 **Responsibility**: Adapter layer + normalization. Hosts one adapter per input channel (WhatsApp, voice transcript, repository event, manual CLI) and produces channel-agnostic `input_event`s flowing into `backlog-core`. Performs the consent check at the system boundary.
 
-**Technology**: TBD per Code-phase decision (Python likely — multi-channel adapters and transcription tooling fit Python ergonomics; final language choice is recorded as a per-component `DEC-*` when the first implementation task is picked up).
+**Technology**: Python 3.12 + FastAPI per [`DEC-backend-stack-python-fastapi`](../../decisions/DEC-backend-stack-python-fastapi.md). Uniform across all five backend components.
 
 ## Interfaces
 
@@ -26,6 +26,7 @@
 
 | File | Title | Trigger |
 |------|-------|---------|
+| [DEC-backend-stack-python-fastapi](../../decisions/DEC-backend-stack-python-fastapi.md) | Python 3.12 + FastAPI as the uniform backend stack | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | Inter-service call patterns |
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Endpoint construction on every outbound call |
 | [DEC-service-auth-bearer-tokens](../../decisions/DEC-service-auth-bearer-tokens.md) | Per-service bearer tokens with declared purposes | Authentication on outbound + inbound calls |

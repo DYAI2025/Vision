@@ -8,40 +8,42 @@ This phase contains the **implementation**. Focus on clean, tested, maintainable
 
 ## Components
 
+All five backend components share a uniform stack per [`DEC-backend-stack-python-fastapi`](../decisions/DEC-backend-stack-python-fastapi.md): Python 3.12 + FastAPI + uvicorn + Pydantic + asyncpg (where applicable) + uv (deps + venv) + pytest + httpx + ruff + mypy strict.
+
 ### whatsorga-ingest
 
 - **Directory**: [`whatsorga-ingest/`](whatsorga-ingest/)
-- **Technology**: TBD (Python likely — finalized as a per-component decision)
+- **Technology**: Python 3.12 + FastAPI
 - **Responsibility**: Adapter layer + normalization. Hosts one adapter per input channel (WhatsApp, voice, repo events, manual CLI) and produces channel-agnostic `input_event`s flowing into `backlog-core`. Performs the consent check at the system boundary.
 
 ### hermes-runtime
 
 - **Directory**: [`hermes-runtime/`](hermes-runtime/)
-- **Technology**: TBD (Python likely — finalized as a per-component decision)
+- **Technology**: Python 3.12 + FastAPI
 - **Responsibility**: Hosts the agent, its skills (routing, extraction, duplicate detection, brain-first lookup, model routing), the confidence-gate middleware, and the learning-loop. Has read access to the systems of record but no write credentials.
 
 ### backlog-core
 
 - **Directory**: [`backlog-core/`](backlog-core/)
-- **Technology**: TBD (Go or Python — finalized as a per-component decision)
+- **Technology**: Python 3.12 + FastAPI (DEC's Reasoning explicitly accepts a possible future supersession for `backlog-core` only if Phase-7 load tests show `REQ-PERF-ingest-latency` cannot be met in Python.)
 - **Responsibility**: The event-sourced technical truth layer. Hosts the event log (Postgres), proposal pipeline, consent records, audit log, retention sweep, RTBF cascade engine, data-export tool, state-reconstruction service, and daily reconciliation job.
 
 ### gbrain-bridge
 
 - **Directory**: [`gbrain-bridge/`](gbrain-bridge/)
-- **Technology**: TBD (Python likely — finalized as a per-component decision)
+- **Technology**: Python 3.12 + FastAPI
 - **Responsibility**: GBrain vault read/write with schema validation, bidirectional link integrity, redaction-precondition check, weekly vault audit sweep, and the Obsidian command-palette watch script.
 
 ### kanban-sync
 
 - **Directory**: [`kanban-sync/`](kanban-sync/)
-- **Technology**: TBD (Python likely — finalized as a per-component decision)
+- **Technology**: Python 3.12 + FastAPI
 - **Responsibility**: Obsidian Kanban markdown file I/O. Maintains the sync-owned vs. user-owned card-frontmatter boundary; detects manual column moves and unattributed edits.
 
 ### cli
 
 - **Directory**: [`cli/`](cli/)
-- **Technology**: TBD (Go for single-binary distribution, or Python matching backend — finalized as a per-component decision)
+- **Technology**: TBD — language choice deferred to `TASK-cli-skeleton` (Go for single-binary distribution, or Python matching the backend stack). Out of scope of `DEC-backend-stack-python-fastapi`.
 - **Responsibility**: The operator `vision` binary — source registration, RTBF, data export, review-queue CLI fallback, backup / restore, secret rotation, VPS install + smoke test, audit query, state-reconstruction preview.
 
 <!-- Add an entry for each component/codebase -->

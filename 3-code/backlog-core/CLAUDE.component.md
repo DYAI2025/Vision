@@ -2,7 +2,7 @@
 
 **Responsibility**: The event-sourced technical truth layer. Hosts the append-only event log (Postgres), the proposal pipeline, the consent-record store, the hash-chained audit log, the retention sweep service, the RTBF cascade engine, the data-export tool, the state-reconstruction service, the daily reconciliation job, and the review-queue routing.
 
-**Technology**: TBD per Code-phase decision (Go or Python — Go for concurrency on the event log; Python natural for reconciliation reports and admin tooling). Recorded as a per-component `DEC-*` when the first implementation task is picked up.
+**Technology**: Python 3.12 + FastAPI per [`DEC-backend-stack-python-fastapi`](../../decisions/DEC-backend-stack-python-fastapi.md). Uniform across all five backend components. (DEC's Reasoning explicitly accepts a possible future supersession for `backlog-core` only if Phase-7 load tests show `REQ-PERF-ingest-latency` cannot be met in Python.)
 
 ## Interfaces
 
@@ -43,6 +43,7 @@
 
 | File | Title | Trigger |
 |------|-------|---------|
+| [DEC-backend-stack-python-fastapi](../../decisions/DEC-backend-stack-python-fastapi.md) | Python 3.12 + FastAPI as the uniform backend stack | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
 | [DEC-postgres-as-event-store](../../decisions/DEC-postgres-as-event-store.md) | Postgres for `backlog-core`'s event log | All storage-layer code |
 | [DEC-hash-chain-over-payload-hash](../../decisions/DEC-hash-chain-over-payload-hash.md) | Audit chain hashes a stable payload digest, not the payload itself | Event-emit, retention sweep, RTBF cascade, audit verification |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | Inter-service call patterns |
