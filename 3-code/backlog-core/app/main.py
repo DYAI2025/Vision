@@ -1,17 +1,13 @@
-"""FastAPI application entry point for backlog-core.
+from __future__ import annotations
 
-Skeleton task (TASK-backlog-core-skeleton): exposes only `GET /v1/health`,
-which pings the Postgres pool created by `app.db.lifespan` and reports
-connectivity. Schema, event-emit primitives, proposal pipeline, RTBF cascade,
-and the rest of the API surface land in subsequent Phase 2 / Phase 3 / Phase
-4 tasks.
-"""
+import os
+from collections import deque
+from datetime import UTC, datetime
+from typing import Annotated, Any, Literal
 
-from typing import Annotated, Literal
-
-from fastapi import Depends, FastAPI, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Response
 from fastapi import status as http_status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app import __version__
 from app.db import _PoolLike, get_pool, lifespan, ping
@@ -26,16 +22,37 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
 PoolDep = Annotated[_PoolLike, Depends(get_pool)]
 
 
 class HealthResponse(BaseModel):
-    """Shape per api-design.md § Health and observability."""
-
     status: Literal["ok", "degraded", "down"]
     version: str
     checks: dict[str, str]
+
+
+class InputEvent(BaseModel):
+    event_id: str = Field(min_length=8)
+    source_id: str = Field(min_length=1)
+    actor_id: str = Field(min_length=1)
+    project_hint: str | None = None
+    channel: Literal["manual_cli", "whatsapp", "voice", "repo"]
+    message_text: str = Field(min_length=1)
+    happened_at: datetime
+    channel_metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class InputAck(BaseModel):
+    event_id: str
+    stored_at: datetime
+
+
+def _events_buffer() -> deque[InputEvent]:
+    events = getattr(app.state, "events", None)
+    if events is None:
+        events = deque(maxlen=1000)
+        app.state.events = events
+    return events
 
 
 @app.get(
@@ -56,3 +73,37 @@ async def health(pool: PoolDep, response: Response) -> HealthResponse:
         version=__version__,
         checks={"postgres": "ok" if postgres_ok else "down"},
     )
+
+
+@app.post(
+    "/v1/inputs",
+    response_model=InputAck,
+    status_code=http_status.HTTP_201_CREATED,
+    tags=["inputs"],
+)
+async def ingest_input(
+    body: InputEvent,
+    authorization: str | None = Header(default=None),
+    idempotency_key: str | None = Header(default=None),
+) -> InputAck:
+    """Store normalized input events for downstream agent processing."""
+    expected_token = os.environ.get("WHATSORGA_INGEST_TOKEN")
+    if expected_token and authorization != f"Bearer {expected_token}":
+        raise HTTPException(status_code=401, detail="auth_invalid")
+
+    if idempotency_key and idempotency_key != body.event_id:
+        raise HTTPException(status_code=409, detail="idempotency_conflict")
+
+    events = _events_buffer()
+    if any(existing.event_id == body.event_id for existing in events):
+        return InputAck(event_id=body.event_id, stored_at=datetime.now(UTC))
+
+    events.append(body)
+    return InputAck(event_id=body.event_id, stored_at=datetime.now(UTC))
+
+
+@app.get("/v1/inputs/recent", response_model=list[InputEvent], tags=["inputs"])
+async def list_recent_inputs(limit: int = 20) -> list[InputEvent]:
+    bounded_limit = max(1, min(limit, 200))
+    events = list(_events_buffer())
+    return events[-bounded_limit:]
