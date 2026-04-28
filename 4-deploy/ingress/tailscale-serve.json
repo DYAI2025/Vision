@@ -1,0 +1,34 @@
+{
+  "TCP": {
+    "443": {
+      "HTTPS": true
+    }
+  },
+  "Web": {
+    "${TS_CERT_DOMAIN}:443": {
+      "Handlers": {
+        "/v1/inputs":          { "Proxy": "http://backlog-core:8000" },
+        "/v1/proposals":       { "Proxy": "http://backlog-core:8000" },
+        "/v1/sources":         { "Proxy": "http://backlog-core:8000" },
+        "/v1/rtbf":            { "Proxy": "http://backlog-core:8000" },
+        "/v1/exports":         { "Proxy": "http://backlog-core:8000" },
+        "/v1/audit/":          { "Proxy": "http://backlog-core:8000" },
+        "/v1/state/":          { "Proxy": "http://backlog-core:8000" },
+        "/v1/sweep/":          { "Proxy": "http://backlog-core:8000" },
+        "/v1/reconciliation/": { "Proxy": "http://backlog-core:8000" },
+        "/v1/review/":         { "Proxy": "http://backlog-core:8000" },
+        "/v1/events/":         { "Proxy": "http://backlog-core:8000" },
+
+        "/v1/pages":           { "Proxy": "http://gbrain-bridge:8000" },
+        "/v1/audit-sweep":     { "Proxy": "http://gbrain-bridge:8000" },
+        "/v1/dispositions":    { "Proxy": "http://gbrain-bridge:8000" },
+
+        "/v1/cards":           { "Proxy": "http://kanban-sync:8000" },
+        "/v1/boards":          { "Proxy": "http://kanban-sync:8000" },
+        "/v1/sync":            { "Proxy": "http://kanban-sync:8000" },
+
+        "/v1/agent/":          { "Proxy": "http://hermes-runtime:8000" }
+      }
+    }
+  }
+}
