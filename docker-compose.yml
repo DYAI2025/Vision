@@ -1,0 +1,326 @@
+# Top-level Compose stack for project-agent-system.
+#
+# Architecture: 5 components + Postgres + Ollama + ingress (Caddy or Tailscale via profile).
+# See 2-design/architecture.md for the full system architecture and
+# 3-code/CLAUDE.code.md for component pointers.
+#
+# Per-component Dockerfiles, application code, and detailed env requirements
+# are added by the corresponding skeleton tasks
+# (TASK-whatsorga-skeleton, TASK-hermes-skeleton, TASK-backlog-core-skeleton,
+# TASK-gbrain-bridge-skeleton, TASK-kanban-sync-skeleton). Until those tasks
+# complete, the per-component services declared here cannot be built.
+# Postgres and Ollama (image-based) can run independently.
+#
+# Inter-service communication: synchronous HTTP/REST on the internal bridge
+# network per DEC-direct-http-between-services. Services discover each other
+# by service name (e.g. http://backlog-core:8000).
+#
+# Ingress: Caddy is the default public-facing reverse proxy; Tailscale is an
+# alternative profile for private-network-only deployments. Selection is via
+# COMPOSE_PROFILES in .env (per REQ-MNT-env-driven-config). Ingress
+# configurations are added by TASK-ingress-caddy-config and
+# TASK-ingress-tailscale-config.
+
+name: project-agent-system
+
+# Shared logging anchor — applied to every service via *default-logging.
+# Limits per-service log size to ~30 MB max (10 MB × 3 rotations) so a
+# long-running VPS doesn't fill its disk with container logs. Per
+# REQ-REL-backup-restore-fidelity (host-independence: no surprise
+# full-disk states on restored hosts).
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+    compress: "true"
+
+services:
+
+  # =====================================================================
+  # Storage layers
+  # =====================================================================
+
+  postgres:
+    # Per DEC-postgres-as-event-store: Postgres 16+ as the event store for
+    # backlog-core. Internal-only; no host port mapping. Backups via pg_dump
+    # are operator-side (TASK-backup-script).
+    image: postgres:16-alpine
+    container_name: project-agent-system-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vision}
+      POSTGRES_USER: ${POSTGRES_USER:-vision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vision} -d ${POSTGRES_DB:-vision}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+
+  ollama:
+    # Local model runtime per CON-local-first-inference. Initial model pull
+    # is operator-side (TASK-ollama-bootstrap). Internal-only.
+    image: ollama/ollama:latest
+    container_name: project-agent-system-ollama
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - internal
+
+  # =====================================================================
+  # Components
+  # =====================================================================
+  # Each component has its own per-component CLAUDE.component.md
+  # (3-code/<component>/CLAUDE.component.md) describing its responsibilities,
+  # interfaces, and applicable decisions. Per-component Dockerfiles are
+  # added by the corresponding skeleton tasks.
+
+  backlog-core:
+    # The event-sourced technical truth layer.
+    # See 3-code/backlog-core/CLAUDE.component.md.
+    build:
+      context: ./3-code/backlog-core
+    container_name: project-agent-system-backlog-core
+    restart: unless-stopped
+    logging: *default-logging
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
+    # are scoped per service. Each service receives only the env vars
+    # listed below; auth tokens land here once TASK-env-example-bootstrap
+    # defines the per-service token inventory.
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-vision}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-vision}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  whatsorga-ingest:
+    # Channel adapters + normalization + consent check at the boundary.
+    # See 3-code/whatsorga-ingest/CLAUDE.component.md.
+    build:
+      context: ./3-code/whatsorga-ingest
+    container_name: project-agent-system-whatsorga-ingest
+    restart: unless-stopped
+    logging: *default-logging
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
+    # are scoped per service. Each service receives only the env vars
+    # listed below; auth tokens land here once TASK-env-example-bootstrap
+    # defines the per-service token inventory.
+    environment:
+      BACKLOG_CORE_URL: http://backlog-core:8000
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  hermes-runtime:
+    # Agent runtime + skills + confidence-gate middleware + learning loop.
+    # See 3-code/hermes-runtime/CLAUDE.component.md.
+    build:
+      context: ./3-code/hermes-runtime
+    container_name: project-agent-system-hermes-runtime
+    restart: unless-stopped
+    logging: *default-logging
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
+    # are scoped per service. Each service receives only the env vars
+    # listed below; auth tokens land here once TASK-env-example-bootstrap
+    # defines the per-service token inventory.
+    environment:
+      BACKLOG_CORE_URL: http://backlog-core:8000
+      GBRAIN_BRIDGE_URL: http://gbrain-bridge:8000
+      KANBAN_SYNC_URL: http://kanban-sync:8000
+      OLLAMA_URL: http://ollama:11434
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  gbrain-bridge:
+    # GBrain vault read/write + schema validation + redaction precondition
+    # + Obsidian command-palette watch script.
+    # See 3-code/gbrain-bridge/CLAUDE.component.md.
+    build:
+      context: ./3-code/gbrain-bridge
+    container_name: project-agent-system-gbrain-bridge
+    restart: unless-stopped
+    logging: *default-logging
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
+    # are scoped per service. Each service receives only the env vars
+    # listed below; auth tokens land here once TASK-env-example-bootstrap
+    # defines the per-service token inventory.
+    environment:
+      BACKLOG_CORE_URL: http://backlog-core:8000
+      VAULT_PATH: /vault
+    volumes:
+      - vault:/vault
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  kanban-sync:
+    # Obsidian Kanban file I/O + sync-vs-edit boundary detection.
+    # See 3-code/kanban-sync/CLAUDE.component.md.
+    build:
+      context: ./3-code/kanban-sync
+    container_name: project-agent-system-kanban-sync
+    restart: unless-stopped
+    logging: *default-logging
+    # No env_file: -- per H-1 from the 2026-04-28 code review, secrets
+    # are scoped per service. Each service receives only the env vars
+    # listed below; auth tokens land here once TASK-env-example-bootstrap
+    # defines the per-service token inventory.
+    environment:
+      BACKLOG_CORE_URL: http://backlog-core:8000
+      VAULT_PATH: /vault
+      KANBAN_SUBTREE: /vault/Kanban
+    volumes:
+      - vault:/vault
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+
+  # =====================================================================
+  # Ingress profiles
+  # =====================================================================
+  # Set COMPOSE_PROFILES in .env to caddy (default, public hostname) or
+  # tailscale (private-network-only). Per REQ-MNT-env-driven-config.
+
+  ingress-caddy:
+    # Public-facing reverse proxy.
+    # Caddyfile is mounted by TASK-ingress-caddy-config (will add
+    # `4-deploy/ingress/Caddyfile`).
+    image: caddy:2-alpine
+    container_name: project-agent-system-ingress-caddy
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - caddy
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+      # The Caddyfile mount is enabled by TASK-ingress-caddy-config:
+      # - ./4-deploy/ingress/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+      hermes-runtime:
+        condition: service_healthy
+    networks:
+      - internal
+
+  ingress-tailscale:
+    # Private-network-only ingress. Joins the Tailnet via TS_AUTHKEY but
+    # does NOT yet expose internal services to the Tailnet — that requires
+    # `tailscale serve` / `tailscale funnel` invocations added by
+    # TASK-ingress-tailscale-config.
+    image: tailscale/tailscale:latest
+    container_name: project-agent-system-ingress-tailscale
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - tailscale
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?TS_AUTHKEY is required when using the tailscale profile}
+      TS_HOSTNAME: ${TS_HOSTNAME:-vision}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    depends_on:
+      backlog-core:
+        condition: service_healthy
+      hermes-runtime:
+        condition: service_healthy
+    networks:
+      - internal
+
+# =====================================================================
+# Volumes — all named so they survive `docker compose down` and can be
+# included in backups (TASK-backup-script). Per REQ-REL-backup-restore-fidelity.
+# =====================================================================
+
+volumes:
+  postgres-data:
+    name: project-agent-system_postgres-data
+  ollama-models:
+    name: project-agent-system_ollama-models
+  vault:
+    name: project-agent-system_vault
+  caddy-data:
+    name: project-agent-system_caddy-data
+  caddy-config:
+    name: project-agent-system_caddy-config
+  tailscale-state:
+    name: project-agent-system_tailscale-state
+
+# =====================================================================
+# Networks — single internal bridge network per DEC-direct-http-between-services.
+# Services discover each other by service name. No host port mappings on
+# components — external access goes through the chosen ingress profile.
+# =====================================================================
+
+networks:
+  internal:
+    name: project-agent-system_internal
+    driver: bridge

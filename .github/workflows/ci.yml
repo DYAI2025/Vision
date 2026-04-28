@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  structure-check:
+    name: Repository structure check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify expected top-level directories exist
+        run: |
+          set -e
+          for dir in 1-spec 2-design 3-code 4-deploy decisions .github; do
+            if [ ! -d "$dir" ]; then
+              echo "Missing required directory: $dir"
+              exit 1
+            fi
+          done
+
+      - name: Verify expected component directories exist
+        run: |
+          set -e
+          for component in whatsorga-ingest hermes-runtime backlog-core gbrain-bridge kanban-sync cli; do
+            if [ ! -d "3-code/$component" ]; then
+              echo "Missing required component directory: 3-code/$component"
+              exit 1
+            fi
+            if [ ! -f "3-code/$component/CLAUDE.component.md" ]; then
+              echo "Missing CLAUDE.component.md for: 3-code/$component"
+              exit 1
+            fi
+          done
+
+      - name: Verify root project files exist
+        run: |
+          set -e
+          for file in CLAUDE.md README.md 3-code/tasks.md 3-code/CLAUDE.code.md \
+                     2-design/architecture.md 2-design/data-model.md 2-design/api-design.md \
+                     1-spec/CLAUDE.spec.md 1-spec/stakeholders.md \
+                     decisions/PROCEDURES.md; do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
+          done
+
+  compose-validate:
+    name: docker-compose syntax check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Provide minimal env vars for substitution
+        run: |
+          # Compose substitutes ${VAR:?...} keys at parse time even with --quiet.
+          # These dummy values let `compose config` succeed without real secrets.
+          {
+            echo "POSTGRES_PASSWORD=ci-validation-password"
+            echo "TS_AUTHKEY=tskey-ci-validation"
+          } > .env
+
+      - name: Validate Compose configuration (caddy profile)
+        run: docker compose --profile caddy config --quiet
+
+      - name: Validate Compose configuration (tailscale profile)
+        run: docker compose --profile tailscale config --quiet
+
+      - name: Clean up CI .env
+        if: always()
+        run: rm -f .env
+
+  # Per-component lint / test jobs are added by per-component skeleton tasks
+  # (TASK-whatsorga-skeleton, TASK-hermes-skeleton, etc.) once each component's
+  # tech stack is chosen. Each component declares its CI in its own README per
+  # the build-commands convention in 3-code/CLAUDE.code.md.
