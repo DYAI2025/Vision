@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 
     from tests.conftest import FakePool
 
-from app.main import _pool_dependency, app
+from app.db import get_pool
+from app.main import app
 
 
 @pytest.fixture
@@ -25,11 +26,11 @@ def client_with_down_pool(fake_pool_down: FakePool) -> Iterator[TestClient]:
     async def _override() -> FakePool:
         return fake_pool_down
 
-    app.dependency_overrides[_pool_dependency] = _override
+    app.dependency_overrides[get_pool] = _override
     try:
         yield TestClient(app)
     finally:
-        app.dependency_overrides.pop(_pool_dependency, None)
+        app.dependency_overrides.pop(get_pool, None)
 
 
 def test_health_returns_200_when_postgres_is_ok(client_with_pool: TestClient) -> None:

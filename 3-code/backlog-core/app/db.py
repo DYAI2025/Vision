@@ -11,10 +11,11 @@ the driver is asyncpg.
 from __future__ import annotations
 
 import os
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import TYPE_CHECKING, Any, Protocol, cast
 
 import asyncpg
+from fastapi import Request  # noqa: TCH002 — FastAPI resolves param types at runtime
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 class _PoolLike(Protocol):
     """Subset of `asyncpg.Pool` we depend on. Lets tests substitute fakes."""
 
-    def acquire(self) -> object: ...
+    def acquire(self) -> AbstractAsyncContextManager[Any]: ...
 
     async def close(self) -> None: ...
 
@@ -50,13 +51,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await pool.close()
 
 
-async def get_pool(app: FastAPI) -> _PoolLike:
+async def get_pool(request: Request) -> _PoolLike:
     """FastAPI dependency: returns the pool created by `lifespan`.
 
     Raises if the lifespan didn't run (e.g., default TestClient usage). Tests
     that don't go through lifespan must override this dependency.
     """
-    pool: Any = getattr(app.state, "pool", None)
+    pool: Any = getattr(request.app.state, "pool", None)
     if pool is None:
         raise RuntimeError(
             "connection pool not initialized — lifespan must run, "
@@ -68,7 +69,7 @@ async def get_pool(app: FastAPI) -> _PoolLike:
 async def ping(pool: _PoolLike) -> bool:
     """Return True if the pool can complete a `SELECT 1`. Never raises."""
     try:
-        async with pool.acquire() as conn:  # type: ignore[attr-defined]
+        async with pool.acquire() as conn:
             value: Any = await conn.fetchval("SELECT 1")
             return bool(value == 1)
     except Exception:

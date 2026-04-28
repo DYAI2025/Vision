@@ -69,16 +69,17 @@ def fake_pool_down() -> FakePool:
 
 @pytest.fixture
 def client_with_pool(fake_pool_ok: FakePool) -> Iterator[Any]:
-    """A FastAPI TestClient whose `_pool_dependency` returns a healthy fake pool."""
+    """A FastAPI TestClient whose `get_pool` dependency returns a healthy fake pool."""
     from fastapi.testclient import TestClient
 
-    from app.main import _pool_dependency, app
+    from app.db import get_pool
+    from app.main import app
 
     async def _override() -> FakePool:
         return fake_pool_ok
 
-    app.dependency_overrides[_pool_dependency] = _override
+    app.dependency_overrides[get_pool] = _override
     try:
         yield TestClient(app)
     finally:
-        app.dependency_overrides.pop(_pool_dependency, None)
+        app.dependency_overrides.pop(get_pool, None)

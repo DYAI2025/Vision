@@ -9,7 +9,7 @@ and the rest of the API surface land in subsequent Phase 2 / Phase 3 / Phase
 
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
 from app import __version__
@@ -26,11 +26,7 @@ app = FastAPI(
 )
 
 
-async def _pool_dependency(request: Request) -> _PoolLike:
-    return await get_pool(request.app)
-
-
-PoolDep = Annotated[_PoolLike, Depends(_pool_dependency)]
+PoolDep = Annotated[_PoolLike, Depends(get_pool)]
 
 
 class HealthResponse(BaseModel):
