@@ -9,28 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
-from fastapi.testclient import TestClient
-
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-    from tests.conftest import FakePool
-
-from app.db import get_pool
-from app.main import app
-
-
-@pytest.fixture
-def client_with_down_pool(fake_pool_down: FakePool) -> Iterator[TestClient]:
-    async def _override() -> FakePool:
-        return fake_pool_down
-
-    app.dependency_overrides[get_pool] = _override
-    try:
-        yield TestClient(app)
-    finally:
-        app.dependency_overrides.pop(get_pool, None)
+    from fastapi.testclient import TestClient
 
 
 def test_health_returns_200_when_postgres_is_ok(client_with_pool: TestClient) -> None:

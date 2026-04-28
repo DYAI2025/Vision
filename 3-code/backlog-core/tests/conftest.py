@@ -2,7 +2,7 @@
 
 Provides a minimal in-process fake of `asyncpg.Pool` so the FastAPI app can
 be exercised without a real Postgres process. Used both directly in tests
-and as a `dependency_overrides` substitute for `app.main._pool_dependency`.
+and as a `dependency_overrides` substitute for `app.db.get_pool`.
 """
 
 from __future__ import annotations
@@ -14,6 +14,8 @@ import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from fastapi.testclient import TestClient
 
 
 class _FakeConnection:
@@ -68,7 +70,7 @@ def fake_pool_down() -> FakePool:
 
 
 @pytest.fixture
-def client_with_pool(fake_pool_ok: FakePool) -> Iterator[Any]:
+def client_with_pool(fake_pool_ok: FakePool) -> Iterator[TestClient]:
     """A FastAPI TestClient whose `get_pool` dependency returns a healthy fake pool."""
     from fastapi.testclient import TestClient
 
@@ -77,6 +79,24 @@ def client_with_pool(fake_pool_ok: FakePool) -> Iterator[Any]:
 
     async def _override() -> FakePool:
         return fake_pool_ok
+
+    app.dependency_overrides[get_pool] = _override
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(get_pool, None)
+
+
+@pytest.fixture
+def client_with_down_pool(fake_pool_down: FakePool) -> Iterator[TestClient]:
+    """A FastAPI TestClient whose `get_pool` dependency returns a failing fake pool."""
+    from fastapi.testclient import TestClient
+
+    from app.db import get_pool
+    from app.main import app
+
+    async def _override() -> FakePool:
+        return fake_pool_down
 
     app.dependency_overrides[get_pool] = _override
     try:
