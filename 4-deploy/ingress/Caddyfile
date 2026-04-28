@@ -54,33 +54,69 @@
 	# does not collide with /v1/audit-sweep* (gbrain-bridge below) — paths
 	# differ at the boundary character (/ vs -).
 
-	handle /v1/inputs* { reverse_proxy backlog-core:8000 }
-	handle /v1/proposals* { reverse_proxy backlog-core:8000 }
-	handle /v1/sources* { reverse_proxy backlog-core:8000 }
-	handle /v1/rtbf* { reverse_proxy backlog-core:8000 }
-	handle /v1/exports* { reverse_proxy backlog-core:8000 }
-	handle /v1/audit/* { reverse_proxy backlog-core:8000 }
-	handle /v1/state/* { reverse_proxy backlog-core:8000 }
-	handle /v1/sweep/* { reverse_proxy backlog-core:8000 }
-	handle /v1/reconciliation/* { reverse_proxy backlog-core:8000 }
-	handle /v1/review/* { reverse_proxy backlog-core:8000 }
-	handle /v1/events/* { reverse_proxy backlog-core:8000 }
+	handle /v1/inputs* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/proposals* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/sources* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/rtbf* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/exports* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/audit/* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/state/* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/sweep/* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/reconciliation/* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/review/* {
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/events/* {
+		reverse_proxy backlog-core:8000
+	}
 
 	# === gbrain-bridge ==================================================
 
-	handle /v1/pages* { reverse_proxy gbrain-bridge:8000 }
-	handle /v1/audit-sweep* { reverse_proxy gbrain-bridge:8000 }
-	handle /v1/dispositions { reverse_proxy gbrain-bridge:8000 }
+	handle /v1/pages* {
+		reverse_proxy gbrain-bridge:8000
+	}
+	handle /v1/audit-sweep* {
+		reverse_proxy gbrain-bridge:8000
+	}
+	handle /v1/dispositions {
+		reverse_proxy gbrain-bridge:8000
+	}
 
 	# === kanban-sync ====================================================
 
-	handle /v1/cards* { reverse_proxy kanban-sync:8000 }
-	handle /v1/boards* { reverse_proxy kanban-sync:8000 }
-	handle /v1/sync { reverse_proxy kanban-sync:8000 }
+	handle /v1/cards* {
+		reverse_proxy kanban-sync:8000
+	}
+	handle /v1/boards* {
+		reverse_proxy kanban-sync:8000
+	}
+	handle /v1/sync {
+		reverse_proxy kanban-sync:8000
+	}
 
 	# === hermes-runtime =================================================
 
-	handle /v1/agent/* { reverse_proxy hermes-runtime:8000 }
+	handle /v1/agent/* {
+		reverse_proxy hermes-runtime:8000
+	}
 
 	# === Root and unmatched =============================================
 
