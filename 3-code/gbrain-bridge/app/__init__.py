@@ -1,4 +1,4 @@
-"""gbrain-bridge — vault context bridge for project-agent-system."""
+"""gbrain-bridge — GBrain vault read/write + watch script for project-agent-system."""
 
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
@@ -6,4 +6,4 @@ from importlib.metadata import version as _pkg_version
 try:
     __version__ = _pkg_version("gbrain-bridge")
 except PackageNotFoundError:
-    __version__ = "0.0.0"
+    __version__ = "0.0.0+unknown"

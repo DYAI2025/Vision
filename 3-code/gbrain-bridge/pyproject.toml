@@ -1,7 +1,7 @@
 [project]
 name = "gbrain-bridge"
 version = "0.0.1"
-description = "GBrain vault bridge for project-agent-system."
+description = "GBrain vault read/write + Obsidian command-palette watch script for project-agent-system."
 requires-python = "==3.12.*"
 dependencies = [
     "fastapi>=0.115,<0.116",
@@ -12,6 +12,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3,<9",
+    "pytest-asyncio>=0.24,<0.25",
     "httpx>=0.27,<0.28",
     "ruff>=0.7,<0.8",
     "mypy>=1.13,<2",
@@ -29,12 +30,27 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP", "SIM", "TCH", "RUF"]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "SIM",
+    "TCH",
+    "RUF",
+]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+no_implicit_optional = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
