@@ -1,0 +1,23 @@
+# Local venv must never be baked into the image — Dockerfile builds its own.
+.venv/
+
+# Test / cache / IDE noise.
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Project meta that the runtime doesn't need.
+README.md
+tests/
+.python-version
+.gitignore
+.dockerignore
+
+# Build output, if any future hatchling builds land here.
+dist/
+build/
+*.egg-info/
