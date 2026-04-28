@@ -128,3 +128,6 @@
 		respond "Not Found — see api-design.md for available routes." 404
 	}
 }
+
+# Deliberate syntax error for CI verification — will be reverted.
+{ unclosed_brace
