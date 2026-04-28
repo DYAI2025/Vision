@@ -162,6 +162,7 @@
 | TASK-cross-provider-verification | Run install + smoke test on ≥2 VPS providers; capture deltas as DECs | P2 | Todo | [REQ-PORT-vps-deploy](../1-spec/requirements/REQ-PORT-vps-deploy.md) | TASK-install-vps-script, TASK-smoke-test-skeleton | 2026-04-28 | Verifies `ASM-vps-docker-baseline-stable` |
 | TASK-perf-ingest-latency-tests | Synthetic monitoring + load test for p95 targets | P1 | Todo | [REQ-PERF-ingest-latency](../1-spec/requirements/REQ-PERF-ingest-latency.md) | TASK-input-event-endpoint, TASK-proposal-pipeline-endpoint | 2026-04-28 |  |
 | TASK-perf-routing-throughput-tests | Sustained + burst throughput load test | P2 | Todo | [REQ-PERF-routing-throughput](../1-spec/requirements/REQ-PERF-routing-throughput.md) | TASK-routing-skill | 2026-04-28 |  |
+| TASK-ci-caddyfile-validate | CI Caddyfile syntax validation job | P2 | Done | [REQ-MNT-env-driven-config](../1-spec/requirements/REQ-MNT-env-driven-config.md) | TASK-ingress-caddy-config | 2026-04-28 | New `caddyfile-validate` job in `.github/workflows/ci.yml` runs `caddy validate` against the mounted Caddyfile via the `caddy:2-alpine` image. Closes the deferred-hardening item from `TASK-ingress-caddy-config`'s "Pre-existing issues observed" notes. Surfaced and fixed a real Caddyfile bug on first green run (single-line `handle X { reverse_proxy Y }` is invalid — Caddy rejects "Unexpected next token after '{' on same line"; commit c617e95 expanded all 19 affected handlers to multi-line form). Negative-path verification: throwaway PR #1 (branch `ci-test/caddyfile-syntax-failure`) injected a deliberate unclosed brace; CI correctly failed `Caddyfile syntax check` (job 73421718057) at line 133 while the other three jobs passed; PR closed + branch deleted. Plan: `docs/plans/2026-04-28-caddyfile-ci-validation.md`. |
 | TASK-phase-1-manual-testing | Install runbook + per-component README skeletons for Phase 1 | P1 | Todo | - | TASK-install-vps-script, TASK-smoke-test-skeleton, TASK-cli-skeleton | 2026-04-28 |  |
 | TASK-phase-2-manual-testing | Consent + audit runbook; component READMEs updated for Phase 2 | P1 | Todo | - | TASK-cli-source-commands, TASK-cli-audit-commands | 2026-04-28 |  |
 | TASK-phase-3-manual-testing | End-to-end ingest runbook + READMEs for Phase 3 | P1 | Todo | - | TASK-cli-manual-input, TASK-hermes-events-consumer | 2026-04-28 |  |
@@ -192,15 +193,16 @@ Defines the order in which tasks should be executed. Tasks are grouped into phas
 5. TASK-ollama-bootstrap
 6. TASK-ingress-caddy-config
 7. TASK-ingress-tailscale-config
-8. TASK-whatsorga-skeleton
-9. TASK-hermes-skeleton
-10. TASK-backlog-core-skeleton
-11. TASK-gbrain-bridge-skeleton
-12. TASK-kanban-sync-skeleton
-13. TASK-cli-skeleton
-14. TASK-install-vps-script
-15. TASK-smoke-test-skeleton
-16. TASK-phase-1-manual-testing
+8. TASK-ci-caddyfile-validate
+9. TASK-whatsorga-skeleton
+10. TASK-hermes-skeleton
+11. TASK-backlog-core-skeleton
+12. TASK-gbrain-bridge-skeleton
+13. TASK-kanban-sync-skeleton
+14. TASK-cli-skeleton
+15. TASK-install-vps-script
+16. TASK-smoke-test-skeleton
+17. TASK-phase-1-manual-testing
 
 ### Phase 2: Consent Foundation + Audit Backbone
 
