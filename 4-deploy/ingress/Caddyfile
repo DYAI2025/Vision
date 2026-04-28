@@ -1,0 +1,94 @@
+# project-agent-system — Caddy ingress configuration.
+#
+# Mounted into the ingress-caddy container at /etc/caddy/Caddyfile (read-only)
+# per docker-compose.yml. Active when COMPOSE_PROFILES=caddy.
+#
+# Routes are path-based per api-design.md's per-service namespaces. All
+# upstream services listen on internal port 8000 on the Docker network.
+#
+# Operator-controlled via .env:
+#   CADDY_HOSTNAME      Hostname Caddy serves on. Default "localhost"
+#                       (Caddy uses its internal CA for self-signed TLS).
+#                       Set to a real hostname (e.g. vision.example.com)
+#                       to trigger Let's Encrypt auto-TLS.
+#   CADDY_ACME_EMAIL    Email registered with Let's Encrypt; required when
+#                       CADDY_HOSTNAME is a public hostname.
+
+{
+	email {$CADDY_ACME_EMAIL:operator@example.com}
+}
+
+{$CADDY_HOSTNAME:localhost} {
+
+	# Compress responses where the client supports it. JSON proposals,
+	# event-stream chunks, and audit-log query responses can be large.
+	encode gzip zstd
+
+	# === Per-service health (for `vision health` aggregator) ============
+	# CLI calls /v1/health/<service>; Caddy rewrites to /v1/health on the
+	# upstream so each service's bare /v1/health endpoint is reused.
+
+	handle /v1/health/backlog-core {
+		rewrite * /v1/health
+		reverse_proxy backlog-core:8000
+	}
+	handle /v1/health/whatsorga-ingest {
+		rewrite * /v1/health
+		reverse_proxy whatsorga-ingest:8000
+	}
+	handle /v1/health/hermes-runtime {
+		rewrite * /v1/health
+		reverse_proxy hermes-runtime:8000
+	}
+	handle /v1/health/gbrain-bridge {
+		rewrite * /v1/health
+		reverse_proxy gbrain-bridge:8000
+	}
+	handle /v1/health/kanban-sync {
+		rewrite * /v1/health
+		reverse_proxy kanban-sync:8000
+	}
+
+	# === backlog-core ===================================================
+	# Source-of-truth routes per api-design.md. /v1/audit/* (backlog-core)
+	# does not collide with /v1/audit-sweep* (gbrain-bridge below) — paths
+	# differ at the boundary character (/ vs -).
+
+	handle /v1/inputs* { reverse_proxy backlog-core:8000 }
+	handle /v1/proposals* { reverse_proxy backlog-core:8000 }
+	handle /v1/sources* { reverse_proxy backlog-core:8000 }
+	handle /v1/rtbf* { reverse_proxy backlog-core:8000 }
+	handle /v1/exports* { reverse_proxy backlog-core:8000 }
+	handle /v1/audit/* { reverse_proxy backlog-core:8000 }
+	handle /v1/state/* { reverse_proxy backlog-core:8000 }
+	handle /v1/sweep/* { reverse_proxy backlog-core:8000 }
+	handle /v1/reconciliation/* { reverse_proxy backlog-core:8000 }
+	handle /v1/review/* { reverse_proxy backlog-core:8000 }
+	handle /v1/events/* { reverse_proxy backlog-core:8000 }
+
+	# === gbrain-bridge ==================================================
+
+	handle /v1/pages* { reverse_proxy gbrain-bridge:8000 }
+	handle /v1/audit-sweep* { reverse_proxy gbrain-bridge:8000 }
+	handle /v1/dispositions { reverse_proxy gbrain-bridge:8000 }
+
+	# === kanban-sync ====================================================
+
+	handle /v1/cards* { reverse_proxy kanban-sync:8000 }
+	handle /v1/boards* { reverse_proxy kanban-sync:8000 }
+	handle /v1/sync { reverse_proxy kanban-sync:8000 }
+
+	# === hermes-runtime =================================================
+
+	handle /v1/agent/* { reverse_proxy hermes-runtime:8000 }
+
+	# === Root and unmatched =============================================
+
+	handle / {
+		respond "project-agent-system ingress (Caddy). Use /v1/health/<service> to check service health, or see api-design.md for routes." 200
+	}
+
+	handle {
+		respond "Not Found — see api-design.md for available routes." 404
+	}
+}
