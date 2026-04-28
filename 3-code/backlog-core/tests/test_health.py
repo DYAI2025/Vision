@@ -64,6 +64,19 @@ def test_health_reports_degraded_when_postgres_is_down(
     assert body["status"] == "degraded"
 
 
+def test_health_returns_503_when_postgres_is_down(
+    client_with_down_pool: TestClient,
+) -> None:
+    """Compose's HTTP-status-only healthcheck must mark the container
+    unhealthy when Postgres is unreachable. The body still carries the
+    full {status, version, checks} shape per api-design.md."""
+    response = client_with_down_pool.get("/v1/health")
+    assert response.status_code == 503
+    body = response.json()
+    assert body["status"] == "degraded"
+    assert body["checks"]["postgres"] == "down"
+
+
 def test_health_does_not_require_auth(client_with_pool: TestClient) -> None:
     """Per api-design.md: 'No auth required' on /v1/health."""
     response = client_with_pool.get("/v1/health")

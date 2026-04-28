@@ -9,7 +9,8 @@ and the rest of the API surface land in subsequent Phase 2 / Phase 3 / Phase
 
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Response
+from fastapi import status as http_status
 from pydantic import BaseModel
 
 from app import __version__
@@ -37,9 +38,19 @@ class HealthResponse(BaseModel):
     checks: dict[str, str]
 
 
-@app.get("/v1/health", response_model=HealthResponse, tags=["health"])
-async def health(pool: PoolDep) -> HealthResponse:
+@app.get(
+    "/v1/health",
+    response_model=HealthResponse,
+    tags=["health"],
+    responses={
+        200: {"description": "All checked dependencies healthy."},
+        503: {"description": "One or more dependencies are degraded or down."},
+    },
+)
+async def health(pool: PoolDep, response: Response) -> HealthResponse:
     postgres_ok = await ping(pool)
+    if not postgres_ok:
+        response.status_code = http_status.HTTP_503_SERVICE_UNAVAILABLE
     return HealthResponse(
         status="ok" if postgres_ok else "degraded",
         version=__version__,
