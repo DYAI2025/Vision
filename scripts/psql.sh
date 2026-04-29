@@ -21,8 +21,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ -f .env ]; then
-  # shellcheck disable=SC1091
   set -a
+  # shellcheck disable=SC1091  # .env is operator-supplied, not present at lint time
   . ./.env
   set +a
 fi
