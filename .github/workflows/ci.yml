@@ -120,6 +120,32 @@ jobs:
             caddy:2-alpine \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 
+  scripts-lint:
+    name: Shell scripts lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash -n syntax check
+        run: |
+          set -e
+          for s in scripts/*.sh; do
+            bash -n "$s"
+            echo "OK: $s"
+          done
+
+      - name: shellcheck
+        # shellcheck is preinstalled on ubuntu-latest runners.
+        run: |
+          set -e
+          shellcheck --version
+          for s in scripts/*.sh; do
+            echo "--- $s ---"
+            shellcheck "$s"
+          done
+
   whatsorga-ingest-test:
     name: whatsorga-ingest tests
     runs-on: ubuntu-latest
