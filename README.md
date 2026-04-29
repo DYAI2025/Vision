@@ -44,22 +44,6 @@ Per-component technology choices (Python / Go / etc.) are deferred to Code-phase
 - **Tasks (what's next)** → [`3-code/tasks.md`](3-code/tasks.md), Execution Plan section.
 - **Decisions (why each call was made)** → [`decisions/`](decisions/) — every `DEC-*.md` carries source, scope, and enforcement; companion `*.history.md` files hold alternatives + reasoning.
 
-
-## Implemented MVP integration status (2026-04-28)
-
-The repository now contains a runnable cross-service MVP path for the primary ingestion and semantic-processing chain:
-
-1. `whatsorga-ingest` exposes `POST /v1/ingest/manual` and forwards normalized `input_event`s to `backlog-core` (`POST /v1/inputs`).
-2. `backlog-core` accepts and stores recent input events for downstream processing (`GET /v1/inputs/recent`).
-3. `hermes-runtime` exposes `POST /v1/agent/process-now` and performs semantic parsing with:
-   - GBrain context lookup (`gbrain-bridge`),
-   - Ollama generation + embeddings,
-   - fallback parsing when the model is unavailable.
-4. `gbrain-bridge` is now a runnable service with `GET /v1/context/{project_id}` reading from vault markdown pages.
-5. `kanban-sync` now has a runnable skeleton so the compose architecture can build end-to-end.
-
-A detailed technical analysis and risk register is documented in [`docs/implementation-analysis.md`](docs/implementation-analysis.md).
-
 ## License
 
 License pending — to be chosen during repository finalization. The bootstrapping scaffold (the `AI SDLC Scaffold`) is licensed under Apache 2.0; the project's own code may adopt the same or a different license.

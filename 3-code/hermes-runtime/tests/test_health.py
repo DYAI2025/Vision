@@ -42,6 +42,6 @@ def test_health_does_not_require_auth() -> None:
 
 
 def test_unknown_path_returns_404() -> None:
-    """Unknown paths should return 404."""
-    response = client.get("/v1/not-found")
+    """Skeleton has no other routes; everything else is 404."""
+    response = client.get("/v1/agent/process-now")
     assert response.status_code == 404

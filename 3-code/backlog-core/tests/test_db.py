@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import AbstractAsyncContextManager
-from typing import Any
-
 import pytest
 
 from app.db import _database_url, ping
@@ -69,7 +66,7 @@ async def test_ping_returns_false_on_acquire_exception() -> None:
     """ping() must never raise — it always returns a bool."""
 
     class BrokenPool:
-        def acquire(self) -> AbstractAsyncContextManager[Any]:
+        def acquire(self) -> object:
             raise RuntimeError("acquire blew up")
 
         async def close(self) -> None:
