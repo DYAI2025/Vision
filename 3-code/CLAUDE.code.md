@@ -43,7 +43,7 @@ All five backend components share a uniform stack per [`DEC-backend-stack-python
 ### cli
 
 - **Directory**: [`cli/`](cli/)
-- **Technology**: TBD — language choice deferred to `TASK-cli-skeleton` (Go for single-binary distribution, or Python matching the backend stack). Out of scope of `DEC-backend-stack-python-fastapi`.
+- **Technology**: Python 3.12 + Typer per [`DEC-cli-stack-python-typer`](../decisions/DEC-cli-stack-python-typer.md). Distributed primarily via `uv tool install`; secondary mode is a profile-gated `cli` Compose service for in-stack invocation.
 - **Responsibility**: The operator `vision` binary — source registration, RTBF, data export, review-queue CLI fallback, backup / restore, secret rotation, VPS install + smoke test, audit query, state-reconstruction preview.
 
 <!-- Add an entry for each component/codebase -->

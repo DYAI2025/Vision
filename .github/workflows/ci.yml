@@ -87,6 +87,9 @@ jobs:
       - name: Validate Compose configuration (tailscale profile)
         run: docker compose --profile tailscale config --quiet
 
+      - name: Validate Compose configuration (cli profile)
+        run: docker compose --profile cli config --quiet
+
       - name: Clean up CI .env
         if: always()
         run: rm -f .env
@@ -267,8 +270,37 @@ jobs:
       - name: Run tests (pytest)
         run: uv run --frozen pytest -q
 
-  # All five backend per-component test jobs are now present
+  cli-test:
+    name: cli tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    defaults:
+      run:
+        working-directory: 3-code/cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.16"
+          enable-cache: true
+          cache-dependency-glob: "3-code/cli/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint (ruff)
+        run: uv run --frozen ruff check .
+
+      - name: Type check (mypy strict)
+        run: uv run --frozen mypy app
+
+      - name: Run tests (pytest)
+        run: uv run --frozen pytest -q
+
+  # All six per-component test jobs are now present
   # (whatsorga-ingest-test, hermes-runtime-test, backlog-core-test,
-  # gbrain-bridge-test, kanban-sync-test). The cli component (TBD tech
-  # stack — Go vs Python deferred to TASK-cli-skeleton) will add its
-  # own CI job following the appropriate language convention.
+  # gbrain-bridge-test, kanban-sync-test, cli-test). Future per-component
+  # work modifies these in place rather than adding new jobs.

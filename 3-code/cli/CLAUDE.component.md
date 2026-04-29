@@ -2,7 +2,7 @@
 
 **Responsibility**: The operator `vision` binary — covers source registration / consent management, RTBF cascade, data-subject export, review-queue CLI fallback, audit query, state-reconstruction preview, backup / restore, secret rotation, VPS install + smoke test, and aggregated health status across the stack. Per `architecture.md` and [`DEC-obsidian-as-review-ui`](../../decisions/DEC-obsidian-as-review-ui.md), the CLI is the surface for transactional / high-stakes operations; routine review actions go through Obsidian's command palette instead.
 
-**Technology**: TBD per Code-phase decision (Go for single-binary distribution, or Python matching backend services). Recorded as a per-component `DEC-*` when the first implementation task is picked up.
+**Technology**: Python 3.12 + Typer per [`DEC-cli-stack-python-typer`](../../decisions/DEC-cli-stack-python-typer.md). Distributed primarily via `uv tool install`; secondary distribution mode is a profile-gated `cli` service in `docker-compose.yml` for in-stack invocation.
 
 ## Interfaces
 
@@ -35,6 +35,8 @@
 
 | File | Title | Trigger |
 |------|-------|---------|
+| [DEC-cli-stack-python-typer](../../decisions/DEC-cli-stack-python-typer.md) | Python 3.12 + Typer for the operator CLI | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
+| [DEC-cursor-pagination-and-event-stream-conventions](../../decisions/DEC-cursor-pagination-and-event-stream-conventions.md) | Cursor pagination + long-poll/SSE event-stream | Any list command (`vision source list`, `vision audit query`, `vision review list`, `vision reconciliation runs`) — paginate to completion before printing OR stream pages to stdout under `--stream` |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | All HTTP client code |
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | All HTTP endpoint construction |
 | [DEC-service-auth-bearer-tokens](../../decisions/DEC-service-auth-bearer-tokens.md) | Per-service bearer tokens with declared purposes | Operator-token handling; never log token values |

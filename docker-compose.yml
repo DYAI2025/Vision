@@ -340,6 +340,29 @@ services:
     networks:
       - internal
 
+  # =====================================================================
+  # Operator CLI — secondary distribution mode per DEC-cli-stack-python-typer
+  # =====================================================================
+  # Profile-gated: only built/started when the operator opts in with
+  #   `docker compose --profile cli run --rm cli <subcommand>`.
+  # Primary distribution is `uv tool install` on the operator's host; this
+  # in-stack mode exists for debugging without polluting the host toolchain.
+  # Default ENTRYPOINT is `vision`, so the command after `cli` is the
+  # subcommand. VISION_BASE_URL targets the in-Compose Caddy ingress.
+
+  cli:
+    build:
+      context: ./3-code/cli
+    container_name: project-agent-system-cli
+    profiles:
+      - cli
+    environment:
+      VISION_BASE_URL: http://ingress-caddy
+      # Operator token forwarded so future auth-required commands work.
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:?required}
+    networks:
+      - internal
+
 # =====================================================================
 # Volumes — all named so they survive `docker compose down` and can be
 # included in backups (TASK-backup-script). Per REQ-REL-backup-restore-fidelity.
