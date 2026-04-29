@@ -206,7 +206,7 @@ services:
     # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
-      VAULT_PATH: /vault
+      VAULT_PATH: ${VAULT_PATH:-/vault}
       # Outbound — gbrain-bridge's identity for disposition POSTs from the
       # Obsidian command-palette watch script (per DEC-obsidian-as-review-ui).
       GBRAIN_BRIDGE_TOKEN: ${GBRAIN_BRIDGE_TOKEN:?required}
@@ -238,7 +238,7 @@ services:
     # No env_file: -- secrets scoped per service per H-1 / DEC-service-auth-bearer-tokens.
     environment:
       BACKLOG_CORE_URL: http://backlog-core:8000
-      VAULT_PATH: /vault
+      VAULT_PATH: ${VAULT_PATH:-/vault}
       KANBAN_SUBTREE: /vault/Kanban
       # Outbound — kanban-sync's identity for kanban.user_edit / unattributed_edit
       # events to backlog-core.
