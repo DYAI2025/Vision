@@ -29,6 +29,7 @@ This phase defines **how** we're building the system. Focus on architecture, dat
 | [DEC-api-versioning](../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) for inter-service APIs | Any new endpoint design must use the active major version path; breaking changes require a new major version |
 | [DEC-service-auth-bearer-tokens](../decisions/DEC-service-auth-bearer-tokens.md) | Service-to-service auth via per-service bearer tokens with declared purposes | Any new inter-service endpoint specifies accepted calling identities and required purposes |
 | [DEC-idempotency-keys](../decisions/DEC-idempotency-keys.md) | Mutation endpoints accept `Idempotency-Key` headers | Any new mutation endpoint declares whether it accepts the header (default: yes) |
+| [DEC-cursor-pagination-and-event-stream-conventions](../decisions/DEC-cursor-pagination-and-event-stream-conventions.md) | Cursor pagination + long-poll/SSE event-stream as cross-cutting API conventions | Any new list endpoint or stream endpoint specification — cursor for collections, SSE for events, no offset/page/WebSocket alternatives at MVP |
 <!-- Add rows as decisions are recorded. File column: [DEC-kebab-name](../decisions/DEC-kebab-name.md) -->
 
 ---

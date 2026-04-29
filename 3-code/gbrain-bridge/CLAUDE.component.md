@@ -43,4 +43,5 @@
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Every endpoint route |
 | [DEC-service-auth-bearer-tokens](../../decisions/DEC-service-auth-bearer-tokens.md) | Per-service bearer tokens with declared purposes | Authentication on every endpoint; purpose-limitation enforcement |
 | [DEC-idempotency-keys](../../decisions/DEC-idempotency-keys.md) | `Idempotency-Key` header on mutations | Every mutation endpoint |
+| [DEC-cursor-pagination-and-event-stream-conventions](../../decisions/DEC-cursor-pagination-and-event-stream-conventions.md) | Cursor pagination + long-poll/SSE event-stream | Any list endpoint exposed by this component (e.g., `GET /v1/audit-sweep/runs`); the watch script does not stream events |
 | [DEC-gdpr-legal-review-deferred](../../decisions/DEC-gdpr-legal-review-deferred.md) | GDPR legal review deferred to Code phase | Any change to GBrain page schemas, retention semantics, or RTBF cascade behavior must include the fallback-if-invalidated note |

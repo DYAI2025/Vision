@@ -35,4 +35,5 @@
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Every endpoint route |
 | [DEC-service-auth-bearer-tokens](../../decisions/DEC-service-auth-bearer-tokens.md) | Per-service bearer tokens with declared purposes | Authentication on every endpoint; purpose-limitation enforcement |
 | [DEC-idempotency-keys](../../decisions/DEC-idempotency-keys.md) | `Idempotency-Key` header on mutations | Every mutation endpoint |
+| [DEC-cursor-pagination-and-event-stream-conventions](../../decisions/DEC-cursor-pagination-and-event-stream-conventions.md) | Cursor pagination + long-poll/SSE event-stream | List endpoints exposed by this component (`GET /v1/cards`, `GET /v1/boards`, `GET /v1/boards/:project_id`); kanban-sync does not stream events directly |
 | [DEC-obsidian-as-review-ui](../../decisions/DEC-obsidian-as-review-ui.md) | Review queue and proposal-detail views as GBrain pages disposed via Obsidian command palette | `unattributed_edit` events on Kanban cards feed the same review-queue surface |

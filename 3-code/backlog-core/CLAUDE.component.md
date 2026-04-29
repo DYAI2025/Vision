@@ -50,5 +50,6 @@
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Every endpoint route |
 | [DEC-service-auth-bearer-tokens](../../decisions/DEC-service-auth-bearer-tokens.md) | Per-service bearer tokens with declared purposes | Authentication on every endpoint; purpose-limitation enforcement |
 | [DEC-idempotency-keys](../../decisions/DEC-idempotency-keys.md) | `Idempotency-Key` header on mutations | Every mutation endpoint; idempotency store implementation |
+| [DEC-cursor-pagination-and-event-stream-conventions](../../decisions/DEC-cursor-pagination-and-event-stream-conventions.md) | Cursor pagination + long-poll/SSE event-stream | Every list endpoint (`/v1/sources`, `/v1/audit/query`, `/v1/review/queue`, `/v1/reconciliation/runs`, `/v1/sources/:id/history`, etc.); the canonical `GET /v1/events/stream` implementation |
 | [DEC-confidence-gate-as-middleware](../../decisions/DEC-confidence-gate-as-middleware.md) | Gate middleware inside `hermes-runtime`, not a separate service | `POST /v1/proposals` validates `gate_inputs` are present and non-null |
 | [DEC-gdpr-legal-review-deferred](../../decisions/DEC-gdpr-legal-review-deferred.md) | GDPR legal review deferred to Code phase | Consent-record schema migrations may need to add `derivative_retention_consent` if assumption invalidated |
