@@ -237,7 +237,38 @@ jobs:
       - name: Run tests (pytest)
         run: uv run --frozen pytest -q
 
-  # Per-component lint / test jobs are added by per-component skeleton tasks
-  # (TASK-kanban-sync-skeleton) following the same template as the four
-  # component-test jobs above. Each component declares its CI in its own
-  # README per the build-commands convention in 3-code/CLAUDE.code.md.
+  kanban-sync-test:
+    name: kanban-sync tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    defaults:
+      run:
+        working-directory: 3-code/kanban-sync
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.16"
+          enable-cache: true
+          cache-dependency-glob: "3-code/kanban-sync/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint (ruff)
+        run: uv run --frozen ruff check .
+
+      - name: Type check (mypy strict)
+        run: uv run --frozen mypy app
+
+      - name: Run tests (pytest)
+        run: uv run --frozen pytest -q
+
+  # All five backend per-component test jobs are now present
+  # (whatsorga-ingest-test, hermes-runtime-test, backlog-core-test,
+  # gbrain-bridge-test, kanban-sync-test). The cli component (TBD tech
+  # stack — Go vs Python deferred to TASK-cli-skeleton) will add its
+  # own CI job following the appropriate language convention.

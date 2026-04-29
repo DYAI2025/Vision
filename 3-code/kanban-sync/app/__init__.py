@@ -1,0 +1,9 @@
+"""kanban-sync — Obsidian Kanban file I/O + sync-vs-edit boundary detection."""
+
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
+
+try:
+    __version__ = _pkg_version("kanban-sync")
+except PackageNotFoundError:
+    __version__ = "0.0.0+unknown"
