@@ -47,12 +47,14 @@ EXIT_CODE=0
 
 if [ -n "$MISSING" ]; then
   echo "ERROR: keys referenced in docker-compose.yml but missing from .env.example:" >&2
+  # shellcheck disable=SC2001 # sed is more idiomatic here than ${var//$'\n'/$'\n'  }
   echo "$MISSING" | sed 's/^/  /' >&2
   EXIT_CODE=1
 fi
 
 if [ -n "$ORPHAN" ]; then
   echo "ERROR: keys in .env.example not referenced in docker-compose.yml (and not Compose intrinsics):" >&2
+  # shellcheck disable=SC2001 # sed is more idiomatic here than ${var//$'\n'/$'\n'  }
   echo "$ORPHAN" | sed 's/^/  /' >&2
   echo "  (If a key is intentionally for a service not yet wired into Compose," >&2
   echo "   either wire it in the relevant service's environment block or remove" >&2

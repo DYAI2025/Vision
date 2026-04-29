@@ -137,14 +137,13 @@ jobs:
           done
 
       - name: shellcheck
-        # shellcheck is preinstalled on ubuntu-latest runners.
+        # shellcheck is preinstalled on ubuntu-latest runners. Pass every
+        # script in a single invocation so all issues surface in one run
+        # (vs. a `set -e`-aborting loop that hides later scripts' issues
+        # behind the first failure).
         run: |
-          set -e
           shellcheck --version
-          for s in scripts/*.sh; do
-            echo "--- $s ---"
-            shellcheck "$s"
-          done
+          shellcheck scripts/*.sh
 
   whatsorga-ingest-test:
     name: whatsorga-ingest tests
