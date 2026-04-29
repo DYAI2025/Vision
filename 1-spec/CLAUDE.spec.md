@@ -162,6 +162,7 @@ When an artifact (goal, user story, requirement) is no longer relevant:
 | [REQ-F-state-reconstruction](requirements/REQ-F-state-reconstruction.md) | Functional | Must-have | Draft | Backlog-Core can reconstruct full project state from event log alone; deterministic, side-effect-free in preview mode; powers rollback / audit replay / disaster recovery |
 | [REQ-REL-event-replay-correctness](requirements/REQ-REL-event-replay-correctness.md) | Reliability | Must-have | Draft | Replay is deterministic, idempotent, crash-safe, and fails fast on corrupted chains; verified by smoke-test harness |
 | [REQ-USA-kanban-obsidian-fidelity](requirements/REQ-USA-kanban-obsidian-fidelity.md) | Usability | Must-have | Draft | Kanban boards open in stock Obsidian without parse errors; sync only touches declared sync-owned fields; human edits to non-sync fields preserved; manual column moves detected |
+| [REQ-USA-paginated-lists](requirements/REQ-USA-paginated-lists.md) | Usability | Should-have | Approved | All list endpoints use opaque cursor pagination (`?after`/`?limit`, default 50 / max 500); events stream uses long-poll/SSE with 30 s heartbeat + 5 min connection cap; clamping, round-trip, retention-sweep tolerance enforced |
 <!-- Add rows as requirements are created. File column: [REQ-CLASS-kebab-name](requirements/REQ-CLASS-kebab-name.md) -->
 
 ---
@@ -177,6 +178,7 @@ When an artifact (goal, user story, requirement) is no longer relevant:
 | [ASM-channel-shape-convergeable](assumptions/ASM-channel-shape-convergeable.md) | Technology | Unverified | Medium | Four MVP channels normalize into one `input_event` shape with channel concerns confined to `channel_metadata`; verified by a swap-test before second adapter |
 | [ASM-in-session-learning-feasible](assumptions/ASM-in-session-learning-feasible.md) | Technology | Unverified | Medium | Prompt-context refresh + routing-rules update is sufficient for visible behavior change in-session, without model retrain or re-embedding |
 | [ASM-vps-docker-baseline-stable](assumptions/ASM-vps-docker-baseline-stable.md) | Environment | Unverified | Medium | Docker-capable VPS baseline (Ubuntu/Debian + Compose v2 + reference hardware) is stable across mainstream providers without provider-specific patches |
+| [ASM-no-scalability-target](assumptions/ASM-no-scalability-target.md) | Business | Unverified | Medium | Horizontal scaling is deliberately out of MVP scope; single-VPS vertical scaling is the only documented adjustment path; verified by Phase-7 load tests passing single-VPS targets |
 <!-- Add rows as assumptions are created. File column: [ASM-kebab-name](assumptions/ASM-kebab-name.md) -->
 
 ---
