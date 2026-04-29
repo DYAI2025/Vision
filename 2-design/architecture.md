@@ -209,7 +209,18 @@ All 10 currently-approved requirements are satisfiable by this architecture:
 | `REQ-SEC-redaction-precondition` | `gbrain-bridge` (write-time check); `kanban-sync` follows the same rule on its writes |
 | `REQ-SEC-remote-inference-audit` | `hermes-runtime` (model-router + audit emission to `backlog-core`) |
 
-The 24 still-`Draft` requirements are forward-compatible with this architecture. Notable: `REQ-USA-kanban-obsidian-fidelity` is satisfied by `kanban-sync`'s sync-vs-edit boundary; `REQ-F-state-reconstruction` and `REQ-REL-event-replay-correctness` are satisfied by `backlog-core`'s replay service; `REQ-PERF-ingest-latency` and `REQ-PERF-routing-throughput` are addressable within the synchronous HTTP design at MVP scale.
+The 24 still-`Draft` requirements are forward-compatible with this architecture. Notable: `REQ-USA-kanban-obsidian-fidelity` is satisfied by `kanban-sync`'s sync-vs-edit boundary; `REQ-F-state-reconstruction` and `REQ-REL-event-replay-correctness` are satisfied by `backlog-core`'s replay service.
+
+## Performance characteristics
+
+Two performance requirements (`Draft`, but explicitly traced into this architecture per gap-analysis M-4 closure 2026-04-29) define the runtime envelope at MVP hardware tier:
+
+| Requirement | Component(s) | Mechanism in this architecture |
+|---|---|---|
+| [`REQ-PERF-ingest-latency`](../1-spec/requirements/REQ-PERF-ingest-latency.md) — p95 < 5 min autonomous, < 2 min review, 30-min stuck-alert tail | `whatsorga-ingest` (normalization + consent check) → `backlog-core` (input event persist + proposal pipeline) → `hermes-runtime` (routing/extraction skills + Ollama call) → `gbrain-bridge` / `kanban-sync` (terminal write) | Synchronous HTTP between services per [`DEC-direct-http-between-services`](../decisions/DEC-direct-http-between-services.md) avoids broker queue depth as a hidden bottleneck. Every hop emits a step-completion audit event (per [`DEC-hash-chain-over-payload-hash`](../decisions/DEC-hash-chain-over-payload-hash.md)), so p95 latency can be reconstructed from the event log without separate APM. The 30-min `processing.stuck` alert is `backlog-core`'s daily reconciliation job (per `REQ-REL-audit-reconciliation`) running on a tighter schedule against in-flight `proposal.proposed` events without a downstream `proposal.applied` or `proposal.rejected`. |
+| [`REQ-PERF-routing-throughput`](../1-spec/requirements/REQ-PERF-routing-throughput.md) — ≥ 10 events/min sustained, ≥ 30 events/min burst on the 4 vCPU / 8 GB reference VPS | `hermes-runtime` (routing skill + brain-first-lookup + extraction) is the throughput-bound component because each event traverses an Ollama call. `backlog-core` (Postgres persistence) is not the bottleneck at MVP scale. | Default-local Gemma per [`CON-local-first-inference`](../1-spec/constraints/CON-local-first-inference.md) sets the baseline; routing skill is async-IO native (per [`DEC-backend-stack-python-fastapi`](../decisions/DEC-backend-stack-python-fastapi.md)) so concurrent in-flight events are bounded by Ollama's own concurrency limit, not by Python GIL contention. Burst tolerance comes from buffering at the FastAPI request layer plus Postgres event-log inserts being well below their own throughput ceiling. Remote-inference profile (`TASK-remote-inference-profile`, Phase 7) is the documented escape hatch if local-only burst tolerance proves insufficient. |
+
+Both targets are validated by `TASK-perf-ingest-latency-tests` and `TASK-perf-routing-throughput-tests` (Phase 7), each linked to its requirement. Horizontal scaling is **not** an MVP capability per [`ASM-no-scalability-target`](../1-spec/assumptions/ASM-no-scalability-target.md) — vertical scaling on the reference VPS is the only documented adjustment path.
 
 ## Dependency on `ASM-derived-artifacts-gdpr-permissible`
 
