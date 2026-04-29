@@ -6,7 +6,29 @@ See [`CLAUDE.md`](CLAUDE.md) → `## Project Overview` for the full project inte
 
 ## Status
 
-**Phase: Code (execution-ready).** The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 105 tasks. Execution begins at Phase 1: Bootstrap & Deployment Foundation.
+**Phase: Code — Phase 1 Bootstrap nearly complete.** All 6 component skeletons shipped (whatsorga-ingest, hermes-runtime, backlog-core, gbrain-bridge, kanban-sync, cli); install + smoke scripts ready; 16 / 106 tasks done overall. The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 106 tasks.
+
+## Install
+
+Bring up the full Compose stack on a fresh Docker-capable VPS (4 vCPU / 8 GB / ≥50 GB disk recommended):
+
+```bash
+git clone https://github.com/DYAI2025/Vision.git && cd Vision
+cp .env.example .env && $EDITOR .env       # generate tokens with: openssl rand -hex 32
+bash scripts/install_vps.sh                 # ~10 min on a fresh host
+bash scripts/smoke_test.sh                  # Phase-1 healthcheck-only verification
+```
+
+Full step-by-step procedure, prerequisites, manual verification scenarios, and troubleshooting are in **[`4-deploy/runbooks/install.md`](4-deploy/runbooks/install.md)** — the canonical install runbook.
+
+After install, the operator CLI is `vision`:
+
+```bash
+# Install uv first if you don't have it:
+command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+uv tool install --from ./3-code/cli vision-cli
+vision health
+```
 
 ## Repository structure
 
@@ -34,7 +56,12 @@ See [`2-design/architecture.md`](2-design/architecture.md) for the full system a
 | [`3-code/kanban-sync/`](3-code/kanban-sync/) | Obsidian Kanban file I/O + sync-owned vs. user-owned card-frontmatter boundary |
 | [`3-code/cli/`](3-code/cli/) | The operator `vision` binary — source registration, RTBF, data export, backup/restore, secret rotation, install, smoke test |
 
-Per-component technology choices (Python / Go / etc.) are deferred to Code-phase decisions recorded as `DEC-*` artifacts when the first implementation task per component is picked up.
+Tech-stack conventions (recorded as Code-phase decisions during Phase 1):
+
+- 5 backend components: **Python 3.12 + FastAPI** per [`DEC-backend-stack-python-fastapi`](decisions/DEC-backend-stack-python-fastapi.md).
+- `cli`: **Python 3.12 + Typer** per [`DEC-cli-stack-python-typer`](decisions/DEC-cli-stack-python-typer.md).
+- Dependency / venv management: `uv` (one venv per component, `.venv/` ignored).
+- Tests: pytest. Lint: ruff. Type check: mypy strict. CI runs all three on every per-component test job.
 
 ## How to navigate
 

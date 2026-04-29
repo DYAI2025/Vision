@@ -157,8 +157,12 @@ log "Pulling Compose images (this is the slowest step on a fresh host)..."
 docker compose pull
 
 # === Step 6: build local components ===================================
-log "Building per-component images (whatsorga-ingest, hermes-runtime, ...) ..."
-docker compose build
+# `--profile cli` builds the cli image too (otherwise it builds lazily on
+# first `docker compose --profile cli run`, adding 30-60s to the first
+# smoke_test.sh run). Other profile-gated services (caddy, tailscale) are
+# image-based, not built, so the flag only affects cli.
+log "Building per-component images (whatsorga-ingest, hermes-runtime, ..., cli) ..."
+docker compose --profile cli build
 
 # === Step 7: bring up the stack =======================================
 log "Starting the stack (docker compose up -d)..."
@@ -246,7 +250,7 @@ first-inference). To verify the stack:
      uv tool install --from ./3-code/cli vision-cli
      vision health
 
-  ${BOLD}3. Run the smoke test (when smoke_test.sh lands per TASK-smoke-test-skeleton):${RESET}
+  ${BOLD}3. Run the Phase-1 healthcheck-only smoke test:${RESET}
      bash scripts/smoke_test.sh
 
 Operational references:
