@@ -168,5 +168,6 @@ Im Root-README ganz oben:
 2. Phase-2 Paket A (Auth + Schemas + Event-Emit) umsetzen.  
 3. Danach Phase-2 Paket B (Source/Audit APIs + CLI).  
 4. Danach Phase-3 Minimalflow für echten E2E-Einstieg.  
+5. Pro Paket sind Tests + Smoke + Review verpflichtend.
 5. Pro Paket: Tests + Smoke + Review verpflichtend.
 
