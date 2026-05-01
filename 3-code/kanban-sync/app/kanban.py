@@ -17,6 +17,7 @@ primitives.
 from __future__ import annotations
 
 import os
+import stat
 from pathlib import Path
 
 DEFAULT_VAULT_PATH = "/vault"
@@ -44,6 +45,9 @@ def is_writable(path: Path) -> bool:
     try:
         if not path.exists() or not path.is_dir():
             return False
-        return os.access(path, os.R_OK | os.W_OK)
+        mode = path.stat().st_mode
+        has_write_bit = bool(mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH))
+        has_effective_access = os.access(path, os.R_OK | os.W_OK | os.X_OK)
+        return has_write_bit and has_effective_access
     except OSError:
         return False
