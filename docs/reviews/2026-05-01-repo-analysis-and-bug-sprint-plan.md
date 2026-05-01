@@ -116,7 +116,7 @@ Da aktuell nur **ein** klarer Bug auf Implementierungsebene aufgefallen ist und 
 
 ---
 
-## 5) Design für klaren Einstiegspunkt in die Application
+## 5) Design für klaren Einstiegspunkt in die Applikation
 
 ## Problem
 Aktuell fehlt ein "single obvious entrypoint" für neue Operatoren/Entwickler.
