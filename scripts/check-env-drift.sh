@@ -29,7 +29,10 @@ if [ ! -f .env.example ]; then
 fi
 
 # Compose ${VAR}, ${VAR:-default}, ${VAR:?error}, ${VAR-default}, ${VAR?error}.
-COMPOSE_KEYS=$(grep -oE '\$\{[A-Z][A-Z0-9_]+' docker-compose.yml | sed 's/^\${//' | sort -u)
+# Strip YAML comments first so a `${VAR}` mentioned inside a `# ...` line or
+# trailing `... # ...` comment is not treated as a real reference.
+COMPOSE_KEYS=$(sed -E 's/(^|[[:space:]])#.*//' docker-compose.yml \
+                 | grep -oE '\$\{[A-Z][A-Z0-9_]+' | sed 's/^\${//' | sort -u)
 
 # .env.example keys (lines like KEY=...; ignores comments and blanks).
 ENV_EXAMPLE_KEYS=$(grep -E '^[A-Z][A-Z0-9_]+=' .env.example | cut -d= -f1 | sort -u)
