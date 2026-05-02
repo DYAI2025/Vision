@@ -82,7 +82,7 @@ async def get_pool(request: Request) -> _PoolLike:
             "connection pool not initialized — lifespan must run, "
             "or get_pool must be overridden in tests"
         )
-    return cast(_PoolLike, pool)
+    return cast("_PoolLike", pool)
 
 
 async def ping(pool: _PoolLike) -> bool:
