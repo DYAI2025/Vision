@@ -242,8 +242,13 @@ def test_retention_sweep_index_is_partial_on_redacted_false(migrated_url: str) -
     assert "false" in indexdef.lower()
 
 
-def test_first_two_partitions_exist(migrated_url: str) -> None:
-    """Migration creates 2026_05 and 2026_06 partitions inline."""
+def test_initial_twelve_months_of_partitions_exist(migrated_url: str) -> None:
+    """Migration pre-creates 12 months of partitions (May 2026 → April 2027)."""
+    expected = [
+        "events_2026_05", "events_2026_06", "events_2026_07", "events_2026_08",
+        "events_2026_09", "events_2026_10", "events_2026_11", "events_2026_12",
+        "events_2027_01", "events_2027_02", "events_2027_03", "events_2027_04",
+    ]
     conn = _connect(migrated_url)
     try:
         with conn.cursor() as cur:
@@ -258,7 +263,7 @@ def test_first_two_partitions_exist(migrated_url: str) -> None:
             partitions = [r[0] for r in cur.fetchall()]
     finally:
         conn.close()
-    assert partitions == ["events_2026_05", "events_2026_06"]
+    assert partitions == expected
 
 
 # ---------------------------------------------------------------------------
@@ -475,11 +480,14 @@ def test_insert_into_unmapped_month_raises(migrated_url: str) -> None:
         # actually 23514 (check_violation) on partitioned-no-default
         # tables; accept either CheckViolation or "no partition" message
         # text from the message inspection below.
+        # The 12-month pre-creation window in 0001 covers May 2026 →
+        # April 2027. Pick a date past the last pre-created partition so
+        # the "no partition for given key" path actually fires.
         with conn, pytest.raises(psycopg2.errors.CheckViolation) as excinfo:
             _insert_event(
                 conn,
                 event_id="99999999-9999-9999-9999-999999999999",
-                created_at="2027-01-15T12:00:00+00:00",
+                created_at="2027-05-15T12:00:00+00:00",
             )
         assert (
             "no partition" in str(excinfo.value).lower()

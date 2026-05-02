@@ -142,8 +142,12 @@ CREATE INDEX events_source_input_event_id_idx
     ON events (source_input_event_id);
 
 -- ---------------------------------------------------------------------------
--- First partition: current month (2026-05) and a grace partition for
--- 2026-06 so the system has at least one future partition pre-created.
+-- Initial 12 months of partitions: May 2026 through April 2027 inclusive.
+-- This gives `TASK-postgres-events-partitioning` (Phase 2 #5) a year-long
+-- window to land its rolling-future cron without any insert ever failing
+-- with "no partition for given key". The cron's job at that point is
+-- maintenance — pre-creating month N+12 each month — not establishing
+-- partitioning.
 -- ---------------------------------------------------------------------------
 --
 -- `TASK-postgres-events-partitioning` (Phase 2 #5) installs the
@@ -159,6 +163,36 @@ CREATE TABLE events_2026_05 PARTITION OF events
 
 CREATE TABLE events_2026_06 PARTITION OF events
     FOR VALUES FROM ('2026-06-01 00:00:00+00') TO ('2026-07-01 00:00:00+00');
+
+CREATE TABLE events_2026_07 PARTITION OF events
+    FOR VALUES FROM ('2026-07-01 00:00:00+00') TO ('2026-08-01 00:00:00+00');
+
+CREATE TABLE events_2026_08 PARTITION OF events
+    FOR VALUES FROM ('2026-08-01 00:00:00+00') TO ('2026-09-01 00:00:00+00');
+
+CREATE TABLE events_2026_09 PARTITION OF events
+    FOR VALUES FROM ('2026-09-01 00:00:00+00') TO ('2026-10-01 00:00:00+00');
+
+CREATE TABLE events_2026_10 PARTITION OF events
+    FOR VALUES FROM ('2026-10-01 00:00:00+00') TO ('2026-11-01 00:00:00+00');
+
+CREATE TABLE events_2026_11 PARTITION OF events
+    FOR VALUES FROM ('2026-11-01 00:00:00+00') TO ('2026-12-01 00:00:00+00');
+
+CREATE TABLE events_2026_12 PARTITION OF events
+    FOR VALUES FROM ('2026-12-01 00:00:00+00') TO ('2027-01-01 00:00:00+00');
+
+CREATE TABLE events_2027_01 PARTITION OF events
+    FOR VALUES FROM ('2027-01-01 00:00:00+00') TO ('2027-02-01 00:00:00+00');
+
+CREATE TABLE events_2027_02 PARTITION OF events
+    FOR VALUES FROM ('2027-02-01 00:00:00+00') TO ('2027-03-01 00:00:00+00');
+
+CREATE TABLE events_2027_03 PARTITION OF events
+    FOR VALUES FROM ('2027-03-01 00:00:00+00') TO ('2027-04-01 00:00:00+00');
+
+CREATE TABLE events_2027_04 PARTITION OF events
+    FOR VALUES FROM ('2027-04-01 00:00:00+00') TO ('2027-05-01 00:00:00+00');
 
 -- ---------------------------------------------------------------------------
 -- Comments for operator-facing introspection.
