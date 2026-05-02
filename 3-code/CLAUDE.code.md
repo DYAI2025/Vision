@@ -58,6 +58,16 @@ All source code, configuration, and assets for a component **must reside within 
 - **No cross-component configuration** — configuration that spans multiple components should never be necessary. If such a situation arises, treat it as a potential design flaw or incorrect component separation. Stop work, notify the user with a clear description of the conflict, and propose alternative actions (e.g., refactoring responsibilities, introducing a new component, or adjusting the design).
 - **Do not rename or move component directories** — the directory names listed above are fixed; renaming or relocating them breaks cross-phase references and tooling assumptions.
 
+### Carve-out: `3-code/_common/<package>/` for declared cross-cutting utilities
+
+Per [`DEC-shared-utility-path-deps`](../decisions/DEC-shared-utility-path-deps.md), `3-code/_common/<package>/` is the **single sanctioned location** for cross-cutting Python utilities consumed by multiple backend components (e.g., `canonical_json`, `bearer_auth`, `idempotency`, `purpose_limitation`, `subject_ref_normalization`).
+
+- Each shared utility lives as an independent uv-managed Python package under `3-code/_common/<package>/` with its own `pyproject.toml`, `uv.lock`, tests, and CI job.
+- Backend components consume it via uv path-dep (`[tool.uv.sources]` with `path = "../_common/<package>", editable = true`).
+- Backend Dockerfiles use **repo root** as build context and copy both `3-code/<component>/` and `3-code/_common/` (so the path-dep resolves at build time). `docker-compose.yml` backend services use `build: { context: ., dockerfile: 3-code/<component>/Dockerfile }`.
+- The carve-out applies only to **declared cross-cutting** utilities — code that is genuinely shared across the backend stack. Two-component-only sharing is still forbidden by the unmodified part of the isolation rule; refactor responsibilities or keep the code in the calling component.
+- Cross-component imports between component directories are still forbidden — `from <other-component>.app import …` remains illegal regardless of `_common/`.
+
 ---
 
 ## Build Commands

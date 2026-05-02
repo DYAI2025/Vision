@@ -97,8 +97,11 @@ services:
   backlog-core:
     # The event-sourced technical truth layer.
     # See 3-code/backlog-core/CLAUDE.component.md.
+    # Build context is the repo root per DEC-shared-utility-path-deps so that
+    # the Dockerfile can copy both 3-code/backlog-core/ and 3-code/_common/.
     build:
-      context: ./3-code/backlog-core
+      context: .
+      dockerfile: 3-code/backlog-core/Dockerfile
     container_name: project-agent-system-backlog-core
     restart: unless-stopped
     logging: *default-logging
@@ -134,8 +137,11 @@ services:
   whatsorga-ingest:
     # Channel adapters + normalization + consent check at the boundary.
     # See 3-code/whatsorga-ingest/CLAUDE.component.md.
+    # Build context is the repo root per DEC-shared-utility-path-deps so that
+    # the Dockerfile can copy both 3-code/whatsorga-ingest/ and 3-code/_common/.
     build:
-      context: ./3-code/whatsorga-ingest
+      context: .
+      dockerfile: 3-code/whatsorga-ingest/Dockerfile
     container_name: project-agent-system-whatsorga-ingest
     restart: unless-stopped
     logging: *default-logging
@@ -161,8 +167,11 @@ services:
   hermes-runtime:
     # Agent runtime + skills + confidence-gate middleware + learning loop.
     # See 3-code/hermes-runtime/CLAUDE.component.md.
+    # Build context is the repo root per DEC-shared-utility-path-deps so that
+    # the Dockerfile can copy both 3-code/hermes-runtime/ and 3-code/_common/.
     build:
-      context: ./3-code/hermes-runtime
+      context: .
+      dockerfile: 3-code/hermes-runtime/Dockerfile
     container_name: project-agent-system-hermes-runtime
     restart: unless-stopped
     logging: *default-logging
@@ -198,8 +207,11 @@ services:
     # GBrain vault read/write + schema validation + redaction precondition
     # + Obsidian command-palette watch script.
     # See 3-code/gbrain-bridge/CLAUDE.component.md.
+    # Build context is the repo root per DEC-shared-utility-path-deps so that
+    # the Dockerfile can copy both 3-code/gbrain-bridge/ and 3-code/_common/.
     build:
-      context: ./3-code/gbrain-bridge
+      context: .
+      dockerfile: 3-code/gbrain-bridge/Dockerfile
     container_name: project-agent-system-gbrain-bridge
     restart: unless-stopped
     logging: *default-logging
@@ -230,8 +242,11 @@ services:
   kanban-sync:
     # Obsidian Kanban file I/O + sync-vs-edit boundary detection.
     # See 3-code/kanban-sync/CLAUDE.component.md.
+    # Build context is the repo root per DEC-shared-utility-path-deps so that
+    # the Dockerfile can copy both 3-code/kanban-sync/ and 3-code/_common/.
     build:
-      context: ./3-code/kanban-sync
+      context: .
+      dockerfile: 3-code/kanban-sync/Dockerfile
     container_name: project-agent-system-kanban-sync
     restart: unless-stopped
     logging: *default-logging

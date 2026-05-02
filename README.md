@@ -6,7 +6,7 @@ See [`CLAUDE.md`](CLAUDE.md) → `## Project Overview` for the full project inte
 
 ## Status
 
-**Phase: Code — Phase 1 Bootstrap nearly complete.** All 6 component skeletons shipped (whatsorga-ingest, hermes-runtime, backlog-core, gbrain-bridge, kanban-sync, cli); install + smoke scripts ready; 16 / 106 tasks done overall. The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 106 tasks.
+**Phase: Code — Phase 1 Bootstrap complete; Phase 2 in progress.** All 6 component skeletons shipped (whatsorga-ingest, hermes-runtime, backlog-core, gbrain-bridge, kanban-sync, cli); install + smoke scripts ready; 18 / 107 tasks done overall. The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 107 tasks.
 
 ## Install
 

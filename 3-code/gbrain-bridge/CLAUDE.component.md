@@ -38,6 +38,7 @@
 | File | Title | Trigger |
 |------|-------|---------|
 | [DEC-backend-stack-python-fastapi](../../decisions/DEC-backend-stack-python-fastapi.md) | Python 3.12 + FastAPI as the uniform backend stack | Any task that creates or modifies source code, build configuration, or test infrastructure inside this component |
+| [DEC-shared-utility-path-deps](../../decisions/DEC-shared-utility-path-deps.md) | Cross-component shared utilities live in `3-code/_common/<package>/` and are consumed via uv path-deps | Any task that adds or modifies a dependency on a `_common/<package>` helper, the Dockerfile, or this component's `build:` block in `docker-compose.yml` |
 | [DEC-obsidian-as-review-ui](../../decisions/DEC-obsidian-as-review-ui.md) | Review queue and proposal-detail views as GBrain pages disposed via Obsidian command palette | Watch-script implementation; `obsidian-bindings/` asset bundle |
 | [DEC-direct-http-between-services](../../decisions/DEC-direct-http-between-services.md) | Synchronous HTTP/REST between services at MVP | Inter-service call patterns |
 | [DEC-api-versioning](../../decisions/DEC-api-versioning.md) | URL-path versioning (`/v1/...`) | Every endpoint route |

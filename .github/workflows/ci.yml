@@ -145,6 +145,66 @@ jobs:
           shellcheck --version
           shellcheck scripts/*.sh
 
+  _common-canonical-json-test:
+    name: _common/canonical_json tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    defaults:
+      run:
+        working-directory: 3-code/_common/canonical_json
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.16"
+          enable-cache: true
+          cache-dependency-glob: "3-code/_common/canonical_json/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint (ruff)
+        run: uv run --frozen ruff check .
+
+      - name: Type check (mypy strict)
+        run: uv run --frozen mypy canonical_json
+
+      - name: Run tests (pytest)
+        run: uv run --frozen pytest -q
+
+  _common-bearer-auth-test:
+    name: _common/bearer_auth tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: structure-check
+    defaults:
+      run:
+        working-directory: 3-code/_common/bearer_auth
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (with cache)
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.16"
+          enable-cache: true
+          cache-dependency-glob: "3-code/_common/bearer_auth/uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint (ruff)
+        run: uv run --frozen ruff check .
+
+      - name: Type check (mypy strict)
+        run: uv run --frozen mypy bearer_auth
+
+      - name: Run tests (pytest)
+        run: uv run --frozen pytest -q
+
   whatsorga-ingest-test:
     name: whatsorga-ingest tests
     runs-on: ubuntu-latest
@@ -161,7 +221,13 @@ jobs:
         with:
           version: "0.9.16"
           enable-cache: true
-          cache-dependency-glob: "3-code/whatsorga-ingest/uv.lock"
+          # All path-dep lockfiles matter for the cache key — uv.lock pins
+          # _common/<package> by relative path; if any shared package's
+          # lockfile changes, this component's cache must invalidate too.
+          cache-dependency-glob: |
+            3-code/whatsorga-ingest/uv.lock
+            3-code/_common/canonical_json/uv.lock
+            3-code/_common/bearer_auth/uv.lock
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -191,7 +257,10 @@ jobs:
         with:
           version: "0.9.16"
           enable-cache: true
-          cache-dependency-glob: "3-code/hermes-runtime/uv.lock"
+          cache-dependency-glob: |
+            3-code/hermes-runtime/uv.lock
+            3-code/_common/canonical_json/uv.lock
+            3-code/_common/bearer_auth/uv.lock
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -221,7 +290,10 @@ jobs:
         with:
           version: "0.9.16"
           enable-cache: true
-          cache-dependency-glob: "3-code/backlog-core/uv.lock"
+          cache-dependency-glob: |
+            3-code/backlog-core/uv.lock
+            3-code/_common/canonical_json/uv.lock
+            3-code/_common/bearer_auth/uv.lock
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -251,7 +323,10 @@ jobs:
         with:
           version: "0.9.16"
           enable-cache: true
-          cache-dependency-glob: "3-code/gbrain-bridge/uv.lock"
+          cache-dependency-glob: |
+            3-code/gbrain-bridge/uv.lock
+            3-code/_common/canonical_json/uv.lock
+            3-code/_common/bearer_auth/uv.lock
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -281,7 +356,10 @@ jobs:
         with:
           version: "0.9.16"
           enable-cache: true
-          cache-dependency-glob: "3-code/kanban-sync/uv.lock"
+          cache-dependency-glob: |
+            3-code/kanban-sync/uv.lock
+            3-code/_common/canonical_json/uv.lock
+            3-code/_common/bearer_auth/uv.lock
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -325,7 +403,10 @@ jobs:
       - name: Run tests (pytest)
         run: uv run --frozen pytest -q
 
-  # All six per-component test jobs are now present
+  # All six per-component test jobs are present
   # (whatsorga-ingest-test, hermes-runtime-test, backlog-core-test,
-  # gbrain-bridge-test, kanban-sync-test, cli-test). Future per-component
-  # work modifies these in place rather than adding new jobs.
+  # gbrain-bridge-test, kanban-sync-test, cli-test). Per
+  # DEC-shared-utility-path-deps each `_common/<package>/` adds its own
+  # `_common-<package>-test` job (currently `_common-canonical-json-test`);
+  # future shared helpers follow the same pattern. Future per-component
+  # work modifies these jobs in place rather than adding new ones.

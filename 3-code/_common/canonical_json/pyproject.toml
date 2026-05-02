@@ -1,25 +1,13 @@
 [project]
-name = "whatsorga-ingest"
+name = "canonical-json"
 version = "0.0.1"
-description = "Adapter layer + normalization for project-agent-system input channels."
+description = "RFC 8785 canonical JSON serialization helper for project-agent-system."
 requires-python = "==3.12.*"
-dependencies = [
-    "fastapi>=0.115,<0.116",
-    "uvicorn[standard]>=0.32,<0.33",
-    "pydantic>=2.9,<3",
-    "canonical-json",
-    "bearer-auth",
-]
-
-[tool.uv.sources]
-canonical-json = { path = "../_common/canonical_json", editable = true }
-bearer-auth = { path = "../_common/bearer_auth", editable = true }
+dependencies = []
 
 [dependency-groups]
 dev = [
     "pytest>=8.3,<9",
-    "pytest-asyncio>=0.24,<0.25",
-    "httpx>=0.27,<0.28",
     "ruff>=0.7,<0.8",
     "mypy>=1.13,<2",
 ]
@@ -29,7 +17,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["canonical_json"]
 
 [tool.ruff]
 line-length = 100
@@ -59,4 +47,3 @@ no_implicit_optional = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-asyncio_mode = "auto"
