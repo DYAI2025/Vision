@@ -57,16 +57,46 @@ def test_is_writable_false_for_file_not_directory(tmp_path: Path) -> None:
     assert is_writable(file_path) is False
 
 
-def test_is_writable_false_for_read_only_directory(tmp_path: Path) -> None:
-    """A directory we can't write to folds into False without raising."""
+def test_is_writable_returns_false_when_access_denied(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """If effective access is denied, writability folds into False."""
     read_only = tmp_path / "ro-board"
     read_only.mkdir()
     read_only.chmod(0o555)
+    original_access = os.access
+
+    def fake_access(path: Path, mode: int, *args: object, **kwargs: object) -> bool:
+        if path == read_only:
+            return False
+        return original_access(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(os, "access", fake_access)
+
     try:
         assert is_writable(read_only) is False
     finally:
         # Restore writable so the tmp_path teardown succeeds.
         read_only.chmod(0o755)
+
+
+def test_is_writable_uses_effective_permissions_not_mode_bits(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Mode bits alone are insufficient when effective access lacks permission.
+
+    This test ensures `is_writable` delegates to `os.access` with the given
+    path, and that effective access is the deciding signal.
+    """
+    # Keep mode bits permissive so this test documents os.access behavior.
+    tmp_path.chmod(0o777)
+
+    def fake_access(path: Path, mode: int, *args: object, **kwargs: object) -> bool:
+        assert path == tmp_path
+        return False
+
+    monkeypatch.setattr(os, "access", fake_access)
+    assert is_writable(tmp_path) is False
 
 
 def test_is_writable_does_not_raise_on_oserror() -> None:
