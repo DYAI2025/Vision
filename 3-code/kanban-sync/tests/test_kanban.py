@@ -65,9 +65,11 @@ def test_is_writable_returns_false_when_access_denied(
     read_only.mkdir()
     read_only.chmod(0o555)
     original_access = os.access
+    expected_mode = os.R_OK | os.W_OK | os.X_OK
 
     def fake_access(path: Path, mode: int, *args: object, **kwargs: object) -> bool:
         if path == read_only:
+            assert mode == expected_mode
             return False
         return original_access(path, mode, *args, **kwargs)
 
