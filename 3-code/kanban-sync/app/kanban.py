@@ -44,6 +44,12 @@ def is_writable(path: Path) -> bool:
     try:
         if not path.exists() or not path.is_dir():
             return False
-        return os.access(path, os.R_OK | os.W_OK | os.X_OK)
+        mode = os.R_OK | os.W_OK | os.X_OK
+        if getattr(os, "supports_effective_ids", None) and os.access in os.supports_effective_ids:
+            try:
+                return os.access(path, mode, effective_ids=True)
+            except NotImplementedError:
+                pass
+        return os.access(path, mode)
     except OSError:
         return False
