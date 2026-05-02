@@ -73,8 +73,23 @@ def test_is_writable_false_for_read_only_directory(tmp_path: Path) -> None:
 def test_is_writable_uses_effective_permissions_not_mode_bits(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Mode bits alone are insufficient when effective UID/GID lacks access."""
-    monkeypatch.setattr(os, "access", lambda *_args, **_kwargs: False)
+    """Mode bits alone are insufficient when effective UID/GID lacks access.
+
+    This test ensures that `is_writable` delegates to `os.access` with the
+    provided path, and that `os.access` is the source of truth even when
+    the mode bits would otherwise allow access.
+    """
+    # Make the mode bits as permissive as possible so the test documents that
+    # effective permissions (via os.access) control the result, not the mode.
+    tmp_path.chmod(0o777)
+
+    def fake_access(path: Path, mode: int, *args, **kwargs) -> bool:
+        # Ensure is_writable calls os.access with the path argument it receives.
+        assert path == tmp_path
+        # Return False regardless of mode bits to simulate lack of effective access.
+        return False
+
+    monkeypatch.setattr(os, "access", fake_access)
     assert is_writable(tmp_path) is False
 
 
