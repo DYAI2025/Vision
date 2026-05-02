@@ -8,6 +8,8 @@ dependencies = [
     "uvicorn[standard]>=0.32,<0.33",
     "pydantic>=2.9,<3",
     "asyncpg>=0.30,<0.31",
+    "yoyo-migrations>=9.0,<10",
+    "psycopg2-binary>=2.9,<3",
     "canonical-json",
     "bearer-auth",
 ]
@@ -21,6 +23,7 @@ dev = [
     "pytest>=8.3,<9",
     "pytest-asyncio>=0.24,<0.25",
     "httpx>=0.27,<0.28",
+    "testcontainers[postgres]>=4.8,<5",
     "ruff>=0.7,<0.8",
     "mypy>=1.13,<2",
 ]
@@ -58,10 +61,13 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["asyncpg"]
+module = ["asyncpg", "yoyo", "yoyo.*", "psycopg2", "testcontainers.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
+markers = [
+    "postgres: integration test requiring a real Postgres container (testcontainers + Docker)",
+]

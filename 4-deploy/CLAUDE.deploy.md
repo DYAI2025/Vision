@@ -12,6 +12,7 @@ This phase handles **deployment and operations**. Focus on reliability, repeatab
 |------|-------|---------|
 | [DEC-gdpr-legal-review-deferred](../decisions/DEC-gdpr-legal-review-deferred.md) | GDPR legal review deferred from Spec → Design gate to Code phase | Any production / non-development deploy — operator must confirm `ASM-derived-artifacts-gdpr-permissible.Status == Verified` before proceeding; production deploy is blocked under the deferred state |
 | [DEC-postgres-as-event-store](../decisions/DEC-postgres-as-event-store.md) | Postgres is the event store for `backlog-core` | Production deployment includes Postgres as a Compose service; `backup.sh` / `restore.sh` target Postgres-formatted archives; smoke test exercises a backup → restore round-trip |
+| [DEC-postgres-migration-tool](../decisions/DEC-postgres-migration-tool.md) | yoyo-migrations is the schema migration tool | Install runbook runs `python -m app.migrations apply` after `docker compose up` and before the smoke test; restore runbook reapplies migrations after restore in case the backup-source DB was on an older migration generation |
 <!-- Add rows as decisions are recorded. File column: [DEC-kebab-name](../decisions/DEC-kebab-name.md) -->
 
 ---
