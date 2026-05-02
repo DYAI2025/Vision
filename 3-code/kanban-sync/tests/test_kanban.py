@@ -63,10 +63,19 @@ def test_is_writable_false_for_read_only_directory(tmp_path: Path) -> None:
     read_only.mkdir()
     read_only.chmod(0o555)
     try:
-        assert is_writable(read_only) is False
+        expected = os.access(read_only, os.R_OK | os.W_OK | os.X_OK)
+        assert is_writable(read_only) is expected
     finally:
         # Restore writable so the tmp_path teardown succeeds.
         read_only.chmod(0o755)
+
+
+def test_is_writable_uses_effective_permissions_not_mode_bits(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Mode bits alone are insufficient when effective UID/GID lacks access."""
+    monkeypatch.setattr(os, "access", lambda *_args, **_kwargs: False)
+    assert is_writable(tmp_path) is False
 
 
 def test_is_writable_does_not_raise_on_oserror() -> None:
