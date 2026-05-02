@@ -63,7 +63,11 @@ def test_is_writable_false_for_read_only_directory(tmp_path: Path) -> None:
     read_only.mkdir()
     read_only.chmod(0o555)
     try:
-        expected = os.access(read_only, os.R_OK | os.W_OK | os.X_OK)
+        mode = os.R_OK | os.W_OK | os.X_OK
+        if os.access in os.supports_effective_ids:
+            expected = os.access(read_only, mode, effective_ids=True)
+        else:
+            expected = os.access(read_only, mode)
         assert is_writable(read_only) is expected
     finally:
         # Restore writable so the tmp_path teardown succeeds.
