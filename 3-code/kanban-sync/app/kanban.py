@@ -36,7 +36,13 @@ def kanban_subtree() -> Path:
 
 
 def is_writable(path: Path) -> bool:
-    """Return True iff `path` exists, is a directory, and is writable.
+    """Return True iff `path` exists, is a directory, and passes write checks.
+
+    Writability here is intentionally strict: the directory must have at least
+    one write mode bit set *and* `os.access(path, os.R_OK | os.W_OK | os.X_OK)`
+    must succeed. Where supported, the access check uses effective IDs;
+    otherwise it falls back to the platform's default `os.access` behavior.
+    otherwise it falls back to the platform's default `os.access` behavior.
 
     Never raises — health-probe semantics. Permission errors, missing paths,
     and "is a file not a dir" all fold into False.
