@@ -194,7 +194,7 @@ CLI commands invoke `backlog-core` HTTP endpoints. The CLI binary ships in `scri
 
 ## Approved requirement coverage
 
-All 10 currently-approved requirements are satisfiable by this architecture:
+All 11 currently-approved requirements are satisfiable by this architecture:
 
 | Requirement | Component(s) responsible |
 |---|---|

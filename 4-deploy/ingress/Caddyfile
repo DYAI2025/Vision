@@ -96,9 +96,6 @@
 	handle /v1/audit-sweep* {
 		reverse_proxy gbrain-bridge:8000
 	}
-	handle /v1/dispositions {
-		reverse_proxy gbrain-bridge:8000
-	}
 
 	# === kanban-sync ====================================================
 
