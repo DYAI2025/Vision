@@ -85,7 +85,7 @@ Tailscale serve uses **longest-prefix matching**; declaration order in `tailscal
 |---|---|---|
 | `/v1/inputs`, `/v1/proposals`, `/v1/sources`, `/v1/rtbf`, `/v1/exports` | `backlog-core` | core API surface |
 | `/v1/audit/`, `/v1/state/`, `/v1/sweep/`, `/v1/reconciliation/`, `/v1/review/`, `/v1/events/` | `backlog-core` | operator + agent endpoints |
-| `/v1/pages`, `/v1/audit-sweep` | `gbrain-bridge` | vault r/w |
+| `/v1/pages`, `/v1/audit-sweep` | `gbrain-bridge` | vault r/w + audit-sweep |
 | `/v1/cards`, `/v1/boards`, `/v1/sync` | `kanban-sync` | kanban surface |
 | `/v1/agent/` | `hermes-runtime` | `POST /v1/agent/process-now` |
 
