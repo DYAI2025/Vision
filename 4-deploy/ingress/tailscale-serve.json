@@ -21,7 +21,6 @@
 
         "/v1/pages":           { "Proxy": "http://gbrain-bridge:8000" },
         "/v1/audit-sweep":     { "Proxy": "http://gbrain-bridge:8000" },
-        "/v1/dispositions":    { "Proxy": "http://gbrain-bridge:8000" },
 
         "/v1/cards":           { "Proxy": "http://kanban-sync:8000" },
         "/v1/boards":          { "Proxy": "http://kanban-sync:8000" },
