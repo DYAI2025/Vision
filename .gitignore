@@ -30,7 +30,7 @@ __pycache__/
 .pytest_cache/
 
 # Build outputs (uncomment what applies to your stack)
-# node_modules/
-# dist/
+node_modules/
+dist/
 # target/
 # build/

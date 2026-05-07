@@ -83,7 +83,8 @@ def migrated_url(postgres_url: str) -> str:
     Uses the production-side runner (``app.migrations.cmd_apply``) so the
     code path tested is the same one operators run. testcontainers'
     ``get_connection_url`` returns a SQLAlchemy-style URL prefixed with
-    ``postgresql+psycopg2://``; the runner accepts this verbatim.
+    ``postgresql+psycopg2://``; the runner normalizes this before handing
+    the URL to yoyo.
     """
     from app.migrations import cmd_apply
 
@@ -93,10 +94,12 @@ def migrated_url(postgres_url: str) -> str:
 
 def _connect(url: str) -> PgConnection:
     """Open a sync psycopg2 connection given an asyncpg-or-yoyo-style URL."""
-    # psycopg2 doesn't recognize the `postgresql+psycopg2://` scheme yoyo
-    # uses; strip the driver suffix before passing to psycopg2.
+    # psycopg2 doesn't recognize SQLAlchemy-style driver suffixes; strip any
+    # testcontainer/application driver suffix before passing to psycopg2.
     if url.startswith("postgresql+psycopg2://"):
         url = "postgresql://" + url[len("postgresql+psycopg2://") :]
+    if url.startswith("postgresql+asyncpg://"):
+        url = "postgresql://" + url[len("postgresql+asyncpg://") :]
     return psycopg2.connect(url)
 
 

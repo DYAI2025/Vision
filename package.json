@@ -1,0 +1,19 @@
+{
+  "name": "vision-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo deployment entrypoint for the Vision stack.",
+  "workspaces": [
+    "3-code/frontend"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace vision-frontend",
+    "start": "npm run start --workspace vision-frontend",
+    "frontend:build": "npm run build --workspace vision-frontend",
+    "frontend:start": "npm run start --workspace vision-frontend"
+  },
+  "engines": {
+    "node": ">=20 <23",
+    "npm": ">=10"
+  }
+}

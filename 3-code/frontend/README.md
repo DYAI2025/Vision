@@ -11,7 +11,9 @@ Railway-ready MVP cockpit for the Vision stack. The UI intentionally targets the
 
 ## Railway deployment
 
-Create a Railway service from this repository with the service root set to `3-code/frontend`.
+Preferred setup: create a Railway service from this repository with the service root set to `3-code/frontend`. This lets Railway read the component-local `railway.json` and `nixpacks.toml` directly.
+
+Defensive fallback: the repository root also contains an npm workspace entrypoint (`package.json`) that delegates `npm run build` and `npm run start` to this frontend. If a Railway service is accidentally left at the repo root, Railpack can still detect a Node app and build the frontend instead of failing while scanning the documentation-only monorepo root.
 
 Required/optional variables:
 
