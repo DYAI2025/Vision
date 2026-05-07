@@ -98,7 +98,6 @@ class SourceUpdateRequest(BaseModel):
     consent_scope: ConsentScope | None = None
     retention_policy: str | None = None
     change_reason: str | None = None
-    changed_by: str = Field(default="operator")
 
     @model_validator(mode="after")
     def at_least_one_change(self) -> "SourceUpdateRequest":
