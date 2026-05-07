@@ -6,7 +6,7 @@ See [`CLAUDE.md`](CLAUDE.md) → `## Project Overview` for the full project inte
 
 ## Status
 
-**Phase: Code — Phase 1 Bootstrap complete; Phase 2 in progress.** All 6 component skeletons shipped (whatsorga-ingest, hermes-runtime, backlog-core, gbrain-bridge, kanban-sync, cli); install + smoke scripts ready; 18 / 107 tasks done overall. The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 107 tasks.
+**Phase: Code — Phase 1 Bootstrap complete; Phase 2 in progress.** All 6 original component skeletons shipped (whatsorga-ingest, hermes-runtime, backlog-core, gbrain-bridge, kanban-sync, cli); install + smoke scripts ready; a Railway-ready frontend MVP cockpit now exists for service health and manual semantic-intake preview. The implementation plan lives in [`3-code/tasks.md`](3-code/tasks.md) — 7 phases, 107 tasks.
 
 ## Install
 
@@ -55,6 +55,7 @@ See [`2-design/architecture.md`](2-design/architecture.md) for the full system a
 | [`3-code/gbrain-bridge/`](3-code/gbrain-bridge/) | GBrain vault r/w + schema validation + bidirectional links + redaction precondition + Obsidian command-palette watch script |
 | [`3-code/kanban-sync/`](3-code/kanban-sync/) | Obsidian Kanban file I/O + sync-owned vs. user-owned card-frontmatter boundary |
 | [`3-code/cli/`](3-code/cli/) | The operator `vision` binary — source registration, RTBF, data export, backup/restore, secret rotation, install, smoke test |
+| [`3-code/frontend/`](3-code/frontend/) | Railway-ready browser cockpit for backend health, architecture visibility, and manual semantic communication-to-Evermemos intake preview |
 
 Tech-stack conventions (recorded as Code-phase decisions during Phase 1):
 
@@ -62,6 +63,11 @@ Tech-stack conventions (recorded as Code-phase decisions during Phase 1):
 - `cli`: **Python 3.12 + Typer** per [`DEC-cli-stack-python-typer`](decisions/DEC-cli-stack-python-typer.md).
 - Dependency / venv management: `uv` (one venv per component, `.venv/` ignored).
 - Tests: pytest. Lint: ruff. Type check: mypy strict. CI runs all three on every per-component test job.
+
+
+## Frontend MVP cockpit
+
+A browser frontend is available in [`3-code/frontend/`](3-code/frontend/). It can be deployed as a Railway service with the service root set to `3-code/frontend`, uses `VITE_API_BASE_URL` to call the existing ingress, and currently focuses on the product slice that is already useful before the backend is complete: service health visibility plus local preparation of semantic communication-summary candidates for future `/v1/inputs` ingestion. See [`docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md`](docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md) for the current architecture/UI/backend evaluation and MVP sequence.
 
 ## How to navigate
 

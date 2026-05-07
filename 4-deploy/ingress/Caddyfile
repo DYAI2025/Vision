@@ -13,6 +13,9 @@
 #                       to trigger Let's Encrypt auto-TLS.
 #   CADDY_ACME_EMAIL    Email registered with Let's Encrypt; required when
 #                       CADDY_HOSTNAME is a public hostname.
+#   FRONTEND_ALLOWED_ORIGIN
+#                       Browser origin allowed to call API routes from the
+#                       Railway frontend. Default "*" for MVP health/intake.
 
 {
 	email {$CADDY_ACME_EMAIL:operator@example.com}
@@ -23,6 +26,20 @@
 	# Compress responses where the client supports it. JSON proposals,
 	# event-stream chunks, and audit-log query responses can be large.
 	encode gzip zstd
+
+	# Browser access for the Railway-hosted frontend. MVP endpoints are called
+	# with JSON/fetch; future auth-required endpoints can send Authorization.
+	header {
+		Access-Control-Allow-Origin {$FRONTEND_ALLOWED_ORIGIN:*}
+		Access-Control-Allow-Methods "GET, POST, PATCH, DELETE, OPTIONS"
+		Access-Control-Allow-Headers "Authorization, Content-Type, Idempotency-Key, X-Requested-With"
+		Vary Origin
+	}
+
+	@preflight method OPTIONS
+	handle @preflight {
+		respond "" 204
+	}
 
 	# === Per-service health (for `vision health` aggregator) ============
 	# CLI calls /v1/health/<service>; Caddy rewrites to /v1/health on the
