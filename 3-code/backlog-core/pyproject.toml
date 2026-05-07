@@ -61,7 +61,7 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["asyncpg", "yoyo", "yoyo.*", "psycopg2", "testcontainers.*"]
+module = ["asyncpg", "yoyo", "yoyo.*", "psycopg2", "psycopg2.*", "testcontainers.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

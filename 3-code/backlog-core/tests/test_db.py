@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 import pytest
+
+if TYPE_CHECKING:
+    from contextlib import AbstractAsyncContextManager
 
 from app.db import _database_url, ping
 from tests.conftest import FakePool
@@ -66,7 +71,7 @@ async def test_ping_returns_false_on_acquire_exception() -> None:
     """ping() must never raise — it always returns a bool."""
 
     class BrokenPool:
-        def acquire(self) -> object:
+        def acquire(self) -> AbstractAsyncContextManager[Any]:
             raise RuntimeError("acquire blew up")
 
         async def close(self) -> None:
