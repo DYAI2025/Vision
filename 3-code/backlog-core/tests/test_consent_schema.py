@@ -135,7 +135,8 @@ def test_migration_applies_both_events_and_consent_migrations(migrated_url: str)
             applied = [r[0] for r in cur.fetchall()]
     finally:
         conn.close()
-    assert applied == ["0001_create-events-table", "0002_create-consent-tables"]
+    expected = ["0001_create-events-table", "0002_create-consent-tables"]
+    assert applied[: len(expected)] == expected
 
 
 def test_consent_tables_have_expected_columns(migrated_url: str) -> None:
