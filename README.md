@@ -67,7 +67,7 @@ Tech-stack conventions (recorded as Code-phase decisions during Phase 1):
 
 ## Frontend MVP cockpit
 
-A browser frontend is available in [`3-code/frontend/`](3-code/frontend/). It can be deployed as a Railway service with the service root set to `3-code/frontend`, uses `VITE_API_BASE_URL` to call the existing ingress, and currently focuses on the product slice that is already useful before the backend is complete: service health visibility plus local preparation of semantic communication-summary candidates for future `/v1/inputs` ingestion. See [`docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md`](docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md) for the current architecture/UI/backend evaluation and MVP sequence.
+A browser frontend is available in [`3-code/frontend/`](3-code/frontend/). It can be deployed as a Railway service with the service root set to `3-code/frontend`, uses `VITE_API_BASE_URL` to call the existing ingress, and currently focuses on the product slice that is already useful before the backend is complete: service health visibility plus local preparation of semantic communication-summary candidates for future `/v1/inputs` ingestion. See [`docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md`](docs/reviews/2026-05-07-architecture-mvp-frontend-analysis.md) for the current architecture/UI/backend evaluation and MVP sequence. A German repository-wide status review and prioritized MVP work plan is available in [`docs/reviews/2026-05-07-repo-stand-und-mvp-next-steps.md`](docs/reviews/2026-05-07-repo-stand-und-mvp-next-steps.md).
 
 ## How to navigate
 
