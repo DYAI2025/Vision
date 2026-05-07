@@ -34,11 +34,12 @@ from app.sources import (
     source_history,
     update_source,
 )
+from app.audit import query_audit, verify_chain, VerificationResult
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    app.state.bearer_auth_verifier = AcceptedTokens(["operator"]).build_verifier()
+    app.state.bearer_auth_verifier = AcceptedTokens(["operator", "gbrain-bridge", "hermes-runtime", "whatsorga-ingest", "kanban-sync"]).build_verifier()
     async with db_lifespan(app):
         yield
 
@@ -269,3 +270,30 @@ async def read_source_history(
     async with pool.acquire() as conn:
         items = await source_history(conn, source_id=source_id, as_of=as_of)
     return {"items": items}
+
+
+@app.get(
+    "/v1/audit/query",
+    tags=["audit"],
+)
+async def get_audit_query(
+    pool: PoolDep,
+    _identity: AuthDep,
+    after: UUID | None = Query(None),
+    limit: int = Query(50, le=100),
+) -> list[dict[str, Any]]:
+    async with pool.acquire() as conn:
+        return await query_audit(conn, after, limit)
+
+
+@app.post(
+    "/v1/audit/verify-chain",
+    response_model=VerificationResult,
+    tags=["audit"],
+)
+async def post_audit_verify(
+    pool: PoolDep,
+    _identity: AuthDep,
+) -> VerificationResult:
+    async with pool.acquire() as conn:
+        return await verify_chain(conn)
