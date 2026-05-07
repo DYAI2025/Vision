@@ -15,7 +15,8 @@
 #                       CADDY_HOSTNAME is a public hostname.
 #   FRONTEND_ALLOWED_ORIGIN
 #                       Browser origin allowed to call API routes from the
-#                       Railway frontend. Default "*" for MVP health/intake.
+#                       Railway frontend. Default "http://localhost:5173".
+#                       Use "*" only as an explicit local/evaluation opt-in.
 
 {
 	email {$CADDY_ACME_EMAIL:operator@example.com}
@@ -30,7 +31,7 @@
 	# Browser access for the Railway-hosted frontend. MVP endpoints are called
 	# with JSON/fetch; future auth-required endpoints can send Authorization.
 	header {
-		Access-Control-Allow-Origin {$FRONTEND_ALLOWED_ORIGIN:*}
+		Access-Control-Allow-Origin {$FRONTEND_ALLOWED_ORIGIN:http://localhost:5173}
 		Access-Control-Allow-Methods "GET, POST, PATCH, DELETE, OPTIONS"
 		Access-Control-Allow-Headers "Authorization, Content-Type, Idempotency-Key, X-Requested-With"
 		Vary Origin

@@ -4,10 +4,10 @@ Railway-ready MVP cockpit for the Vision stack. The UI intentionally targets the
 
 ## What it does now
 
-- Shows the current architecture split across `whatsorga-ingest`, `hermes-runtime`, `backlog-core`, `gbrain-bridge`, and `kanban-sync`.
+- Shows the current architecture split across `whatsorga-ingest`, `hermes-runtime`, `backlog-core`, `gbrain-bridge`, and `kanban-sync`; this display data is centralized in `src/appConfig.ts`.
 - Calls `/v1/health/<service>` for every backend service through the configured ingress.
 - Provides a manual intake form that locally prepares a semantic summary candidate, suggested Evermemos placement, tags, confidence, and a future `/v1/inputs` payload.
-- Attempts to POST the payload to `/v1/inputs` when clicked; because that endpoint is still an open backend task, failures are reported as expected MVP gap rather than hidden.
+- Attempts to POST the payload to `/v1/inputs` when clicked; because that endpoint is still an open backend task, failures are reported as an expected MVP gap rather than hidden.
 
 ## Railway deployment
 
@@ -38,4 +38,4 @@ npm ci
 npm run dev
 ```
 
-For a local Compose ingress, set `VITE_API_BASE_URL=http://localhost` in `.env`. For a Railway deployment, also set `FRONTEND_ALLOWED_ORIGIN` in the Compose/Caddy stack to the Railway app origin unless you intentionally keep the MVP wildcard default.
+For a local Compose ingress, set `VITE_API_BASE_URL=http://localhost` in `.env`. For a Railway deployment, also set `FRONTEND_ALLOWED_ORIGIN` in the Compose/Caddy stack to the Railway app origin unless you explicitly opt into `*` for local/evaluation-only testing.
