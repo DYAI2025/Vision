@@ -301,6 +301,8 @@ services:
       CADDY_HOSTNAME: ${CADDY_HOSTNAME:-localhost}
       # Email registered with Let's Encrypt — required for non-localhost hosts.
       CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL:-operator@example.com}
+      # Browser origin allowed to call API routes from the Railway frontend.
+      FRONTEND_ALLOWED_ORIGIN: ${FRONTEND_ALLOWED_ORIGIN:-http://localhost:5173}
     volumes:
       - caddy-data:/data
       - caddy-config:/config
