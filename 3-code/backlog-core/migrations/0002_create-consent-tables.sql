@@ -62,7 +62,12 @@ CREATE TABLE consent_sources (
         jsonb_typeof(consent_scope) = 'object'
     ),
     CONSTRAINT consent_sources_scope_mvp_flags_check CHECK (
-        jsonb_typeof(consent_scope -> 'route_to_projects') = 'boolean'
+        consent_scope ? 'route_to_projects'
+        AND consent_scope ? 'summarize'
+        AND consent_scope ? 'extract_artifacts'
+        AND consent_scope ? 'learning_signal'
+        AND consent_scope ? 'remote_inference_allowed'
+        AND jsonb_typeof(consent_scope -> 'route_to_projects') = 'boolean'
         AND jsonb_typeof(consent_scope -> 'summarize') = 'boolean'
         AND jsonb_typeof(consent_scope -> 'extract_artifacts') = 'boolean'
         AND jsonb_typeof(consent_scope -> 'learning_signal') = 'boolean'
@@ -104,7 +109,12 @@ CREATE TABLE consent_history (
         jsonb_typeof(new_scope) = 'object'
     ),
     CONSTRAINT consent_history_new_scope_mvp_flags_check CHECK (
-        jsonb_typeof(new_scope -> 'route_to_projects') = 'boolean'
+        new_scope ? 'route_to_projects'
+        AND new_scope ? 'summarize'
+        AND new_scope ? 'extract_artifacts'
+        AND new_scope ? 'learning_signal'
+        AND new_scope ? 'remote_inference_allowed'
+        AND jsonb_typeof(new_scope -> 'route_to_projects') = 'boolean'
         AND jsonb_typeof(new_scope -> 'summarize') = 'boolean'
         AND jsonb_typeof(new_scope -> 'extract_artifacts') = 'boolean'
         AND jsonb_typeof(new_scope -> 'learning_signal') = 'boolean'

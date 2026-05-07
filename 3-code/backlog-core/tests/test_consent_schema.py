@@ -272,6 +272,24 @@ def test_scope_requires_mvp_flags_as_booleans(migrated_url: str) -> None:
         conn.close()
 
 
+def test_history_new_scope_requires_mvp_flags_as_booleans(migrated_url: str) -> None:
+    conn = _connect(migrated_url)
+    invalid_scope = dict(MVP_SCOPE)
+    invalid_scope.pop("learning_signal")
+    try:
+        with conn:
+            _insert_source(conn, "manual:history-missing-flag")
+        with conn, pytest.raises(psycopg2.errors.CheckViolation):
+            _insert_history(
+                conn,
+                source_id="manual:history-missing-flag",
+                history_id="44444444-4444-4444-4444-444444444444",
+                new_scope=invalid_scope,
+            )
+    finally:
+        conn.close()
+
+
 def test_consent_history_is_append_only(migrated_url: str) -> None:
     conn = _connect(migrated_url)
     try:
