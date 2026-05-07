@@ -177,7 +177,9 @@ async def create_source(
 async def read_sources(
     pool: PoolDep,
     _identity: AuthDep,
-    status_filter: str | None = Query(default=None, alias="status"),
+    status_filter: Literal["active", "revoked"] | None = Query(
+        default=None, alias="status"
+    ),
     actor_id: str | None = None,
 ) -> list[dict[str, Any]]:
     async with pool.acquire() as conn:
