@@ -49,21 +49,20 @@ def _migrations_dir() -> Path:
 
 
 def _backend_url(database_url: str) -> str:
-    """Convert an asyncpg-style URL to yoyo's expected format.
+    """Normalize SQLAlchemy-style Postgres URLs to yoyo's accepted schemes.
 
-    The application uses ``postgresql://`` URLs read by asyncpg. yoyo's
-    backend dispatch wants ``postgresql+psycopg2://`` to select the sync
-    driver explicitly. We do the substitution here so callers (and the
-    install runbook) don't need to know about the driver split.
-
-    Already-prefixed URLs pass through unchanged so power users can override.
+    ``testcontainers`` and some application libraries emit SQLAlchemy-style
+    URLs that include the driver name in the scheme, for example
+    ``postgresql+psycopg2://`` or ``postgresql+asyncpg://``. yoyo dispatches
+    Postgres backends from the plain ``postgresql://`` / ``postgres://``
+    schemes, so strip known driver suffixes before creating the backend.
     """
-    if database_url.startswith(("postgresql+", "postgres+")):
+    if database_url.startswith("postgresql+psycopg2://"):
+        return "postgresql://" + database_url[len("postgresql+psycopg2://") :]
+    if database_url.startswith("postgresql+asyncpg://"):
+        return "postgresql://" + database_url[len("postgresql+asyncpg://") :]
+    if database_url.startswith(("postgresql://", "postgres://")):
         return database_url
-    if database_url.startswith("postgresql://"):
-        return "postgresql+psycopg2://" + database_url[len("postgresql://") :]
-    if database_url.startswith("postgres://"):
-        return "postgresql+psycopg2://" + database_url[len("postgres://") :]
     raise ValueError(
         f"DATABASE_URL must start with 'postgresql://' or 'postgres://'; "
         f"got prefix {database_url.split(':', 1)[0]!r}"
