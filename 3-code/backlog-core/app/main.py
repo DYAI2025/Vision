@@ -172,7 +172,12 @@ async def create_source(
         raise
 
 
-@app.get("/v1/sources", response_model=list[SourceRecord], tags=["sources"])
+class SourceListResponse(BaseModel):
+    items: list[SourceRecord]
+    next_cursor: str | None = None
+
+
+@app.get("/v1/sources", response_model=SourceListResponse, tags=["sources"])
 async def read_sources(
     pool: PoolDep,
     _identity: AuthDep,
@@ -180,9 +185,10 @@ async def read_sources(
         default=None, alias="status"
     ),
     actor_id: str | None = None,
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     async with pool.acquire() as conn:
-        return await list_sources(conn, status=status_filter, actor_id=actor_id)
+        sources = await list_sources(conn, status=status_filter, actor_id=actor_id)
+    return {"items": sources, "next_cursor": None}
 
 
 @app.get(
