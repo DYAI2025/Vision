@@ -14,7 +14,7 @@ import httpx
 from pydantic import BaseModel
 
 from .skills.extraction import extract_semantic_data, ExtractionResult
-from ..ollama_client import OllamaClient
+from .ollama_client import OllamaClient
 
 BACKLOG_CORE_URL = os.environ.get("BACKLOG_CORE_URL", "http://backlog-core:8000")
 KANBAN_SYNC_URL = os.environ.get("KANBAN_SYNC_URL", "http://kanban-sync:8000")
@@ -78,7 +78,7 @@ async def process_idea_to_proposal(ollama: OllamaClient, req: ProcessRequest) ->
         kanban_resp = await client.post(
             f"{KANBAN_SYNC_URL}/v1/cards",
             json={
-                "card_id": f"idea-{proposal_id[:8]}",
+                "card_id": str(proposal_id),
                 "title": extraction.summary,
                 "content": req.text,
                 "column": "Inbox",

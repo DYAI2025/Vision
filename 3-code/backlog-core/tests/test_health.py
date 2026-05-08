@@ -65,5 +65,5 @@ def test_health_does_not_require_auth(client_with_pool: TestClient) -> None:
 
 
 def test_unknown_path_returns_404(client_with_pool: TestClient) -> None:
-    response = client_with_pool.get("/v1/inputs")
+    response = client_with_pool.get("/v1/missing")
     assert response.status_code == 404

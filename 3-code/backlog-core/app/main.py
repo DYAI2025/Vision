@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Annotated, Any, Literal, cast
 from uuid import UUID
 import uuid
+import json
 
 from bearer_auth import (
     AcceptedTokens,
@@ -21,8 +22,11 @@ from bearer_auth import (
 from bearer_auth.dependency import auth_error_to_response
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi import status as http_status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 from starlette.responses import Response as StarletteResponse
+from starlette.concurrency import iterate_in_threadpool
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app import __version__
 from app.db import _PoolLike, get_pool, ping
@@ -37,6 +41,52 @@ from app.sources import (
 )
 from app.audit import query_audit, verify_chain, VerificationResult
 from app.events import emit, EventEmitRequest
+from app.idempotency import get_idempotent_response, save_idempotent_response, IdempotencyRecord
+
+
+class IdempotencyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        key_raw = request.headers.get("X-Idempotency-Key")
+        if not key_raw or request.method not in ("POST", "PATCH", "PUT"):
+            return await call_next(request)
+
+        try:
+            key = uuid.UUID(key_raw)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={"error": {"code": "invalid_idempotency_key", "message": "X-Idempotency-Key must be a valid UUID"}}
+            )
+
+        pool = getattr(request.app.state, "pool", None)
+        if pool:
+            async with pool.acquire() as conn:
+                cached = await get_idempotent_response(conn, key)
+                if cached:
+                    response = JSONResponse(status_code=cached.status_code, content=cached.payload)
+                    response.headers["X-Cache-Hit"] = "true"
+                    return response
+
+        # Proceed with request
+        response = await call_next(request)
+
+        # Store response if successful (2xx) and it's JSON
+        if pool and 200 <= response.status_code < 300 and response.headers.get("content-type") == "application/json":
+            response_body = [chunk async for chunk in response.body_iterator]
+            response.body_iterator = iterate_in_threadpool(iter(response_body))
+            
+            try:
+                body_json = json.loads(b"".join(response_body))
+                async with pool.acquire() as conn:
+                    await save_idempotent_response(
+                        conn, 
+                        key, 
+                        IdempotencyRecord(payload=body_json, status_code=response.status_code)
+                    )
+            except (json.JSONDecodeError, Exception):
+                pass 
+
+        return response
 
 
 @asynccontextmanager
@@ -55,6 +105,8 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+app.add_middleware(IdempotencyMiddleware)
 
 
 PoolDep = Annotated[_PoolLike, Depends(get_pool)]
@@ -377,3 +429,43 @@ async def post_proposal(
             ),
         )
     return {"proposal_id": request.proposal_id, "event_id": event_id}
+
+
+@app.get(
+    "/v1/proposals",
+    tags=["proposals"],
+)
+async def get_proposals(
+    pool: PoolDep,
+    _identity: AuthDep,
+    status: str = Query("pending", alias="status")
+) -> list[dict[str, Any]]:
+    """List proposals from the audit log. 
+    
+    For MVP, we fetch all 'proposal.proposed' events that don't have a 
+    corresponding 'proposal.disposition' event.
+    """
+    # Simple query for MVP
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT e.proposal_id, e.payload, e.created_at
+            FROM events e
+            WHERE e.event_type = 'proposal.proposed'
+            AND NOT EXISTS (
+                SELECT 1 FROM events d 
+                WHERE d.proposal_id = e.proposal_id 
+                AND d.event_type IN ('proposal.applied', 'proposal.rejected', 'proposal.disposition')
+            )
+            ORDER BY e.created_at DESC
+            """
+        )
+    return [
+        {
+            "proposal_id": row["proposal_id"],
+            "content": row["payload"]["content"] if isinstance(row["payload"], dict) else json.loads(row["payload"])["content"],
+            "gate_inputs": row["payload"]["gate_inputs"] if isinstance(row["payload"], dict) else json.loads(row["payload"])["gate_inputs"],
+            "created_at": row["created_at"]
+        }
+        for row in rows
+    ]
