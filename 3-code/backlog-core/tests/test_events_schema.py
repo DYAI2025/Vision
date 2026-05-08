@@ -120,7 +120,11 @@ def test_migration_applies_cleanly(migrated_url: str) -> None:
         applied = [r[0] for r in rows]
     finally:
         conn.close()
-    assert applied == ["0001_create-events-table", "0002_create-consent-tables"]
+    assert applied == [
+        "0001_create-events-table",
+        "0002_create-consent-tables",
+        "0003_fix-consent-scope-check-null-handling",
+    ]
 
 
 def test_events_table_exists_and_is_partitioned(migrated_url: str) -> None:
