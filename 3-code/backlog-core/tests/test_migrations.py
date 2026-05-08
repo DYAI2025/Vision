@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from yoyo import read_migrations
 
@@ -48,3 +50,13 @@ def test_yoyo_reads_all_numbered_sql_migrations() -> None:
         "0002_create-consent-tables",
         "0003_fix-consent-scope-check-null-handling",
     ]
+
+
+def test_consent_scope_fix_constraints_are_added_not_valid() -> None:
+    migration_sql = Path(
+        "migrations/0003_fix-consent-scope-check-null-handling.sql"
+    ).read_text()
+
+    assert "consent_sources_scope_mvp_flags_check CHECK" in migration_sql
+    assert "consent_history_new_scope_mvp_flags_check CHECK" in migration_sql
+    assert migration_sql.count(") NOT VALID;") == 2
