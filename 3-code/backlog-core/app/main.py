@@ -35,6 +35,7 @@ from app.sources import (
     update_source,
 )
 from app.audit import query_audit, verify_chain, VerificationResult
+from app.events import emit, EventEmitRequest
 
 
 @asynccontextmanager
@@ -270,6 +271,37 @@ async def read_source_history(
     async with pool.acquire() as conn:
         items = await source_history(conn, source_id=source_id, as_of=as_of)
     return {"items": items}
+
+
+# --- Inputs & Audit ---
+
+class InputEventRequest(BaseModel):
+    event_type: str = Field(min_length=1)
+    payload: dict[str, Any] = Field(default_factory=dict)
+    retention_class: str = Field(default="raw_30d")
+
+
+@app.post(
+    "/v1/inputs",
+    status_code=http_status.HTTP_201_CREATED,
+    tags=["inputs"],
+)
+async def post_input(
+    request: InputEventRequest,
+    pool: PoolDep,
+    identity: AuthDep,
+) -> dict[str, Any]:
+    async with pool.acquire() as conn, conn.transaction():
+        event_id = await emit(
+            conn,
+            EventEmitRequest(
+                event_type=request.event_type,
+                actor_id=identity.name,
+                payload=request.payload,
+                retention_class=request.retention_class,
+            ),
+        )
+    return {"event_id": event_id}
 
 
 @app.get(

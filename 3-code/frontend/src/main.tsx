@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { roadmap, services } from "./appConfig";
+import { services } from "./appConfig";
 import "./styles.css";
 
 type HealthState = "ok" | "degraded" | "down" | "unknown";
@@ -9,6 +9,15 @@ type HealthResult = {
   status: HealthState;
   detail: string;
 };
+
+interface AuditEvent {
+  event_id: string;
+  event_type: string;
+  actor_id: string;
+  created_at: string;
+  hash: string;
+  payload: Record<string, unknown>;
+}
 
 type MemoDraft = {
   summary: string;
@@ -19,6 +28,7 @@ type MemoDraft = {
 };
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const operatorToken = import.meta.env.VITE_OPERATOR_TOKEN ?? "test-token";
 
 function summarize(text: string, memo: string): MemoDraft {
   const normalized = text.trim().replace(/\s+/g, " ");
@@ -64,9 +74,11 @@ function statusLabel(status: HealthState): string {
 
 function App() {
   const [health, setHealth] = useState<Record<string, HealthResult>>({});
-  const [communication, setCommunication] = useState("Ben: Lass uns die Meeting-Notizen direkt in Evermemos clustern. Vincent: Wichtig ist, dass offene Entscheidungen als Review-Vorschlag sichtbar bleiben.");
-  const [memo, setMemo] = useState("Evermemos/Projektgedächtnis/MVP");
-  const [sendState, setSendState] = useState<string>("Noch nicht gesendet.");
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const [communication, setCommunication] = useState("Lass uns die neue Projektstruktur in Obsidian abbilden. Vincent: Die Kanbankarten müssen automatisch mit dem Audit-Log verknüpft sein.");
+  const [memo, setMemo] = useState("Projekte/Vision/Backlog");
+  const [sendState, setSendState] = useState<string>("Bereit zum Speichern.");
+  const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
   const draft = useMemo(() => summarize(communication, memo), [communication, memo]);
 
   async function refreshHealth() {
@@ -82,111 +94,196 @@ function App() {
         }
       }),
     );
-    setHealth(Object.fromEntries(entries));
+    const healthMap = Object.fromEntries(entries);
+    setHealth(healthMap);
+    
+    // Check if critical Truth Store is down
+    if (healthMap["backlog-core"]?.status === "down" || healthMap["backlog-core"]?.status === "unknown") {
+      setBackendError("Backend-Verbindung unterbrochen. Bitte 'docker compose up' ausführen.");
+    } else {
+      setBackendError(null);
+    }
   }
 
-  async function submitDraft() {
-    setSendState("Sende Kandidat an /v1/inputs …");
+  async function loadAudit() {
     try {
+      const response = await fetch(`${apiBase}/v1/audit/query?limit=5`, {
+        headers: { "Authorization": `Bearer ${operatorToken}`, "Accept": "application/json" }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuditLog(data);
+      }
+    } catch (e) {}
+  }
+
+  async function ensureSourceRegistered() {
+    try {
+      await fetch(`${apiBase}/v1/sources`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${operatorToken}` 
+        },
+        body: JSON.stringify({
+          source_id: "frontend-workbench",
+          actor_id: "operator",
+          consent_scope: { summarize: true, extract_artifacts: true, learning_signal: true },
+          retention_policy: "raw_30d",
+          granted_by: "ui"
+        }),
+      });
+    } catch (e) {
+      // 409 or network error - either way we proceed
+    }
+  }
+
+  async function submitIdea() {
+    setSendState("Sende Idee an Audit-Log …");
+    try {
+      await ensureSourceRegistered();
+
+      // 2. Dann Event speichern
       const response = await fetch(`${apiBase}/v1/inputs`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(draft.payload),
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${operatorToken}` 
+        },
+        body: JSON.stringify({
+          event_type: "idea.captured",
+          payload: draft.payload,
+          retention_class: "audit_kept"
+        }),
       });
+
       if (!response.ok) {
-        setSendState(`Backend noch nicht bereit: HTTP ${response.status}. Payload bleibt lokal kopierbar.`);
-        return;
+        setSendState(`Fehler: HTTP ${response.status}. Logge lokal.`);
+      } else {
+        setSendState("Idee sicher im Audit-Log festgeschrieben.");
+        void loadAudit();
       }
-      setSendState("Kandidat wurde vom Backend angenommen.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "unbekannter Fehler";
-      setSendState(`Backend nicht erreichbar: ${message}. Payload bleibt lokal kopierbar.`);
+      setSendState("Backend nicht erreichbar. Nutze lokale Vorschau.");
     }
   }
 
   useEffect(() => {
     void refreshHealth();
+    void loadAudit();
   }, []);
 
   return (
     <main>
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Vision MVP Cockpit</p>
-          <h1>Semantische Kommunikations-Zusammenfassung mit Evermemos-Fit.</h1>
-          <p>
-            Dieses Frontend ist bewusst MVP-nah: Es zeigt, welche Architekturteile bereits leben, prüft vorhandene Health-Endpunkte
-            und bereitet manuelle Kommunikationsinhalte als semantischen Kandidaten für die spätere Pipeline vor.
-          </p>
-          <div className="actions">
-            <button onClick={() => void refreshHealth()}>Backend-Status aktualisieren</button>
-            <a href="#intake">Inhalt vorbereiten</a>
+      {backendError && (
+        <div className="error-banner">
+          ⚠️ {backendError}
+        </div>
+      )}
+      <header className="workbench-header">
+        <p className="eyebrow">Vision | Idea Workbench</p>
+        <h1>Vom Gedanken zur digitalen Wahrheit.</h1>
+        <div className="status-summary">
+          {services.map(s => (
+            <span key={s.id} className={`dot ${health[s.id]?.status ?? 'unknown'}`} title={s.name}></span>
+          ))}
+          <button className="minimal" onClick={() => void refreshHealth()}>Sync Status</button>
+        </div>
+      </header>
+
+      <div className="workbench-grid">
+        {/* LINKS: INPUT & PROCESSING */}
+        <section className="panel workspace">
+          <h2>1. Ideenfindung & Erfassung</h2>
+          <p className="hint">Beschreibe dein Vorhaben. Hermes analysiert Struktur und Kontext lokal.</p>
+          
+          <label>
+            Gedankengang
+            <textarea 
+              value={communication} 
+              onChange={(e) => setCommunication(e.target.value)} 
+              placeholder="Was beschäftigt dich gerade?"
+              rows={6} 
+            />
+          </label>
+
+          <label>
+            Ziel-Kontext (Obsidian)
+            <input 
+              value={memo} 
+              onChange={(e) => setMemo(e.target.value)} 
+              placeholder="Ordner oder Projektreferenz"
+            />
+          </label>
+
+          <div className="processing-indicator">
+            <span className="pulse"></span>
+            Semantische Analyse aktiv (Local Inbound)
           </div>
-        </div>
-        <div className="hero-card">
-          <span>API Base</span>
-          <strong>{apiBase || "same origin"}</strong>
-          <small>Für Railway: VITE_API_BASE_URL auf die Caddy/Tailscale-Ingress-URL setzen.</small>
-        </div>
-      </section>
+        </section>
 
-      <section className="grid">
-        {services.map((service) => {
-          const state = health[service.id]?.status ?? "unknown";
-          return (
-            <article className="card" key={service.id}>
-              <div className="card-head">
-                <h2>{service.name}</h2>
-                <span className={`pill ${state}`}>{statusLabel(state)}</span>
+        {/* RECHTS: PREVIEW & DISPOSITION */}
+        <section className="panel result-view">
+          <h2>2. Semantische Aufbereitung</h2>
+          <div className="candidate-card">
+            <h3>Zusammenfassung</h3>
+            <p>{draft.summary}</p>
+            
+            <div className="meta-grid">
+              <div>
+                <small>Matching</small>
+                <strong>{draft.suggestedMemo}</strong>
               </div>
-              <p>{service.role}</p>
-              <dl>
-                <dt>Funktioniert</dt>
-                <dd>{service.works}</dd>
-                <dt>Offen</dt>
-                <dd>{service.open}</dd>
-                <dt>Health</dt>
-                <dd>{health[service.id]?.detail ?? "Noch nicht geprüft."}</dd>
-              </dl>
-            </article>
-          );
-        })}
-      </section>
+              <div>
+                <small>Confidence</small>
+                <strong>{Math.round(draft.confidence * 100)}%</strong>
+              </div>
+            </div>
 
-      <section className="panel" id="intake">
-        <div>
-          <p className="eyebrow">MVP Intake</p>
-          <h2>Kommunikation semantisch vorbereiten</h2>
-          <p>
-            Bis Hermes und backlog-core die echten Endpunkte liefern, erzeugt die UI lokal eine Vorschau des Payloads. Sobald
-            /v1/inputs implementiert ist, kann derselbe Flow direkt angewendet werden.
-          </p>
+            <div className="tag-list">
+              {draft.tags.map(t => <span key={t} className="tag">#{t}</span>)}
+            </div>
+
+            <div className="actions-main">
+              <button className="primary" onClick={() => void submitIdea()}>Sicher abspeichern</button>
+              <button className="secondary">In Obsidian bearbeiten</button>
+            </div>
+            <p className="status-msg">{sendState}</p>
+          </div>
+        </section>
+      </div>
+
+      {/* UNTEN: AUDIT TRAIL VISUALIZATION */}
+      <section className="panel audit-trail">
+        <div className="panel-head">
+          <h2>3. Digitale Wahrheit (Audit Trail)</h2>
+          <button className="minimal" onClick={() => void loadAudit()}>Historie aktualisieren</button>
         </div>
-        <label>
-          Kommunikation
-          <textarea value={communication} onChange={(event) => setCommunication(event.target.value)} rows={7} />
-        </label>
-        <label>
-          Evermemos-Ziel oder Kontext
-          <input value={memo} onChange={(event) => setMemo(event.target.value)} />
-        </label>
-        <div className="result">
-          <h3>Semantischer Kandidat</h3>
-          <p>{draft.summary}</p>
-          <p><strong>Einpassen in:</strong> {draft.suggestedMemo}</p>
-          <p><strong>Tags:</strong> {draft.tags.length ? draft.tags.join(", ") : "—"}</p>
-          <p><strong>Confidence:</strong> {Math.round(draft.confidence * 100)}%</p>
-          <pre>{JSON.stringify(draft.payload, null, 2)}</pre>
-          <button onClick={() => void submitDraft()}>An Backend anwenden</button>
-          <small>{sendState}</small>
+        <div className="audit-list">
+          {auditLog.length === 0 ? (
+            <p className="empty">Noch keine Events im permanenten Speicher.</p>
+          ) : (
+            auditLog.map(event => (
+              <div key={event.event_id} className="audit-entry">
+                <span className="ts">{new Date(event.created_at).toLocaleTimeString()}</span>
+                <span className="type">{event.event_type}</span>
+                <span className="actor">{event.actor_id}</span>
+                <code className="hash">{event.hash.substring(0, 16)}...</code>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
-      <section className="panel roadmap">
-        <p className="eyebrow">Nächste MVP-Schritte</p>
-        <ol>
-          {roadmap.map((item) => <li key={item}>{item}</li>)}
-        </ol>
+      <section className="roadmap-compact">
+        <h3>System-Integrität</h3>
+        <div className="services-mini">
+          {services.map(s => (
+            <div key={s.id} className="service-item">
+              <strong>{s.name}</strong>: {health[s.id]?.status === 'ok' ? 'Funktional' : 'Wartet auf Initialisierung'}
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   );
