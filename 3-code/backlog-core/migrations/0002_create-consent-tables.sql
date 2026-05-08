@@ -62,16 +62,16 @@ CREATE TABLE consent_sources (
         jsonb_typeof(consent_scope) = 'object'
     ),
     CONSTRAINT consent_sources_scope_mvp_flags_check CHECK (
-        consent_scope ? 'route_to_projects'
-        AND consent_scope ? 'summarize'
-        AND consent_scope ? 'extract_artifacts'
-        AND consent_scope ? 'learning_signal'
-        AND consent_scope ? 'remote_inference_allowed'
-        AND jsonb_typeof(consent_scope -> 'route_to_projects') = 'boolean'
-        AND jsonb_typeof(consent_scope -> 'summarize') = 'boolean'
-        AND jsonb_typeof(consent_scope -> 'extract_artifacts') = 'boolean'
-        AND jsonb_typeof(consent_scope -> 'learning_signal') = 'boolean'
-        AND jsonb_typeof(consent_scope -> 'remote_inference_allowed') = 'boolean'
+        (consent_scope ? 'route_to_projects') IS TRUE
+        AND (consent_scope ? 'summarize') IS TRUE
+        AND (consent_scope ? 'extract_artifacts') IS TRUE
+        AND (consent_scope ? 'learning_signal') IS TRUE
+        AND (consent_scope ? 'remote_inference_allowed') IS TRUE
+        AND (jsonb_typeof(consent_scope -> 'route_to_projects') = 'boolean') IS TRUE
+        AND (jsonb_typeof(consent_scope -> 'summarize') = 'boolean') IS TRUE
+        AND (jsonb_typeof(consent_scope -> 'extract_artifacts') = 'boolean') IS TRUE
+        AND (jsonb_typeof(consent_scope -> 'learning_signal') = 'boolean') IS TRUE
+        AND (jsonb_typeof(consent_scope -> 'remote_inference_allowed') = 'boolean') IS TRUE
     )
 );
 
@@ -109,16 +109,16 @@ CREATE TABLE consent_history (
         jsonb_typeof(new_scope) = 'object'
     ),
     CONSTRAINT consent_history_new_scope_mvp_flags_check CHECK (
-        new_scope ? 'route_to_projects'
-        AND new_scope ? 'summarize'
-        AND new_scope ? 'extract_artifacts'
-        AND new_scope ? 'learning_signal'
-        AND new_scope ? 'remote_inference_allowed'
-        AND jsonb_typeof(new_scope -> 'route_to_projects') = 'boolean'
-        AND jsonb_typeof(new_scope -> 'summarize') = 'boolean'
-        AND jsonb_typeof(new_scope -> 'extract_artifacts') = 'boolean'
-        AND jsonb_typeof(new_scope -> 'learning_signal') = 'boolean'
-        AND jsonb_typeof(new_scope -> 'remote_inference_allowed') = 'boolean'
+        (new_scope ? 'route_to_projects') IS TRUE
+        AND (new_scope ? 'summarize') IS TRUE
+        AND (new_scope ? 'extract_artifacts') IS TRUE
+        AND (new_scope ? 'learning_signal') IS TRUE
+        AND (new_scope ? 'remote_inference_allowed') IS TRUE
+        AND (jsonb_typeof(new_scope -> 'route_to_projects') = 'boolean') IS TRUE
+        AND (jsonb_typeof(new_scope -> 'summarize') = 'boolean') IS TRUE
+        AND (jsonb_typeof(new_scope -> 'extract_artifacts') = 'boolean') IS TRUE
+        AND (jsonb_typeof(new_scope -> 'learning_signal') = 'boolean') IS TRUE
+        AND (jsonb_typeof(new_scope -> 'remote_inference_allowed') = 'boolean') IS TRUE
     ),
     CONSTRAINT consent_history_prior_scope_is_object_check CHECK (
         prior_scope IS NULL OR jsonb_typeof(prior_scope) = 'object'
