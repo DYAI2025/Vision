@@ -1,10 +1,11 @@
 -- 0003_fix-consent-scope-check-null-handling.sql
 --
--- 0002_create-consent-tables originally allowed UNKNOWN CHECK results for
--- JSONB scopes that omitted required MVP flags because bare `?` predicates and
--- `jsonb_typeof(...) = 'boolean'` comparisons can evaluate to NULL/UNKNOWN.
--- Replacing the constraints in a forward migration ensures databases that have
--- already applied 0002 receive the corrected validation; yoyo never re-runs an
+-- Some databases may already have an older 0002_create-consent-tables
+-- constraint definition that allowed UNKNOWN CHECK results for JSONB scopes
+-- omitting required MVP flags, because it used bare `?` predicates and
+-- `jsonb_typeof(...) = 'boolean'` comparisons without `... IS TRUE` guards.
+-- Replacing the constraints in this forward migration ensures those already-
+-- applied databases receive the corrected validation; yoyo never re-runs an
 -- applied migration.
 
 ALTER TABLE consent_sources
