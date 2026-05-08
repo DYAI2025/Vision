@@ -102,5 +102,5 @@ def test_unknown_path_returns_404(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("KANBAN_SUBTREE", str(tmp_path))
-    response = client.get("/v1/cards")
+    response = client.get("/v1/missing-path")
     assert response.status_code == 404
