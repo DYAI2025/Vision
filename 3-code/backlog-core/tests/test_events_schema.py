@@ -601,8 +601,8 @@ def test_running_apply_twice_is_a_noop(migrated_url: str) -> None:
             (count,) = cur.fetchone()
     finally:
         conn.close()
-    # Migration count is still 2 — nothing was re-applied.
-    assert count == 2
+    # Migration count is still 3 — nothing was re-applied.
+    assert count == 3
 
 
 # ---------------------------------------------------------------------------
