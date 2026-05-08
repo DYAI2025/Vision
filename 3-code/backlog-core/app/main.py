@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Any, Literal, cast
 from uuid import UUID
+import uuid
 
 from bearer_auth import (
     AcceptedTokens,
@@ -40,7 +41,7 @@ from app.events import emit, EventEmitRequest
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    app.state.bearer_auth_verifier = AcceptedTokens(["operator", "gbrain-bridge", "hermes-runtime", "whatsorga-ingest", "kanban-sync"]).build_verifier()
+    app.state.bearer_auth_verifier = AcceptedTokens(["operator", "gbrain-bridge", "hermes-runtime", "whatsorga-ingest", "kanban-sync", "frontend-workbench"]).build_verifier()
     async with db_lifespan(app):
         yield
 
@@ -329,3 +330,50 @@ async def post_audit_verify(
 ) -> VerificationResult:
     async with pool.acquire() as conn:
         return await verify_chain(conn)
+
+
+# --- Proposals ---
+
+class ProposalGateInputs(BaseModel):
+    confidence: float
+    gate_band: Literal["low", "mid", "high"]
+    consent_snapshot: dict[str, Any]
+    whitelist_entry: bool = True
+    auto_policy: dict[str, str] = Field(default_factory=dict)
+    demotion_reason: str | None = None
+
+
+class ProposalCreateRequest(BaseModel):
+    proposal_id: UUID = Field(default_factory=uuid.uuid4)
+    tool_id: Literal["backlog-core", "gbrain-bridge", "kanban-sync"]
+    content: dict[str, Any]
+    gate_inputs: ProposalGateInputs
+    source_input_event_id: UUID
+    cited_pages: list[str] = Field(default_factory=list)
+    learnings_applied: list[str] = Field(default_factory=list)
+
+
+@app.post(
+    "/v1/proposals",
+    status_code=http_status.HTTP_201_CREATED,
+    tags=["proposals"],
+)
+async def post_proposal(
+    request: ProposalCreateRequest,
+    pool: PoolDep,
+    identity: AuthDep,
+) -> dict[str, Any]:
+    """Emit a proposal.proposed event to the audit log."""
+    async with pool.acquire() as conn, conn.transaction():
+        event_id = await emit(
+            conn,
+            EventEmitRequest(
+                event_type="proposal.proposed",
+                actor_id=identity.name,
+                proposal_id=request.proposal_id,
+                source_input_event_id=request.source_input_event_id,
+                payload=request.model_dump(mode="json"),
+                retention_class="derived_keep",
+            ),
+        )
+    return {"proposal_id": request.proposal_id, "event_id": event_id}

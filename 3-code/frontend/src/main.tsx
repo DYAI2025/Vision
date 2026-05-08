@@ -79,7 +79,39 @@ function App() {
   const [memo, setMemo] = useState("Projekte/Vision/Backlog");
   const [sendState, setSendState] = useState<string>("Bereit zum Speichern.");
   const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
-  const draft = useMemo(() => summarize(communication, memo), [communication, memo]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiDraft, setAiDraft] = useState<MemoDraft | null>(null);
+
+  const localDraft = useMemo(() => summarize(communication, memo), [communication, memo]);
+  const activeDraft = aiDraft || localDraft;
+
+  async function runHermesExtraction() {
+    setIsProcessing(true);
+    try {
+      const response = await fetch(`${apiBase}/v1/extract`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${operatorToken}` 
+        },
+        body: JSON.stringify({ text: communication }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAiDraft({
+          summary: data.summary,
+          tags: data.tags,
+          suggestedMemo: memo,
+          confidence: data.confidence,
+          payload: { ...data, source: "hermes-ai" }
+        });
+      }
+    } catch (e) {
+      console.error("Hermes extraction failed", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
 
   async function refreshHealth() {
     const entries = await Promise.all(
@@ -139,32 +171,32 @@ function App() {
   }
 
   async function submitIdea() {
-    setSendState("Sende Idee an Audit-Log …");
+    setSendState("Hermes verarbeitet Idee (Loop startet) …");
     try {
       await ensureSourceRegistered();
 
-      // 2. Dann Event speichern
-      const response = await fetch(`${apiBase}/v1/inputs`, {
+      // Vollständigen Intelligence-Loop in Hermes triggern
+      const response = await fetch(`${apiBase}/v1/process-idea`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
           "Authorization": `Bearer ${operatorToken}` 
         },
         body: JSON.stringify({
-          event_type: "idea.captured",
-          payload: draft.payload,
-          retention_class: "audit_kept"
+          text: communication,
+          target_memo: memo
         }),
       });
 
       if (!response.ok) {
-        setSendState(`Fehler: HTTP ${response.status}. Logge lokal.`);
+        setSendState(`Fehler im Loop: HTTP ${response.status}.`);
       } else {
-        setSendState("Idee sicher im Audit-Log festgeschrieben.");
+        const result = await response.json();
+        setSendState(`Erfolg! Proposal ${result.proposal_id.substring(0,8)} und Kanban-Karte erstellt.`);
         void loadAudit();
       }
     } catch (error) {
-      setSendState("Backend nicht erreichbar. Nutze lokale Vorschau.");
+      setSendState("Backend-Loop fehlgeschlagen. Dienst-Status prüfen.");
     }
   }
 
@@ -211,15 +243,24 @@ function App() {
             Ziel-Kontext (Obsidian)
             <input 
               value={memo} 
-              onChange={(e) => setMemo(e.target.value)} 
+              onChange={(e) => {
+                setMemo(e.target.value);
+                setAiDraft(null); // Reset AI draft on change to show local preview
+              }} 
               placeholder="Ordner oder Projektreferenz"
             />
           </label>
 
-          <div className="processing-indicator">
-            <span className="pulse"></span>
-            Semantische Analyse aktiv (Local Inbound)
-          </div>
+          <button className="minimal" onClick={() => void runHermesExtraction()} disabled={isProcessing}>
+            {isProcessing ? "KI arbeitet..." : "✨ Semantik durch Hermes verfeinern"}
+          </button>
+
+          {isProcessing && (
+            <div className="processing-indicator">
+              <span className="pulse"></span>
+              Hermes analysiert Struktur und Kontext...
+            </div>
+          )}
         </section>
 
         {/* RECHTS: PREVIEW & DISPOSITION */}
@@ -227,26 +268,25 @@ function App() {
           <h2>2. Semantische Aufbereitung</h2>
           <div className="candidate-card">
             <h3>Zusammenfassung</h3>
-            <p>{draft.summary}</p>
+            <p>{activeDraft.summary}</p>
             
             <div className="meta-grid">
               <div>
                 <small>Matching</small>
-                <strong>{draft.suggestedMemo}</strong>
+                <strong>{activeDraft.suggestedMemo}</strong>
               </div>
               <div>
                 <small>Confidence</small>
-                <strong>{Math.round(draft.confidence * 100)}%</strong>
+                <strong>{Math.round(activeDraft.confidence * 100)}%</strong>
               </div>
             </div>
 
             <div className="tag-list">
-              {draft.tags.map(t => <span key={t} className="tag">#{t}</span>)}
+              {activeDraft.tags.map(t => <span key={t} className="tag">#{t}</span>)}
             </div>
 
             <div className="actions-main">
               <button className="primary" onClick={() => void submitIdea()}>Sicher abspeichern</button>
-              <button className="secondary">In Obsidian bearbeiten</button>
             </div>
             <p className="status-msg">{sendState}</p>
           </div>
